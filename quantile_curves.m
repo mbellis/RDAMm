@@ -316,7 +316,11 @@ if ~isempty(NegIndex)
     OutputRes.mean(NegIndex)=LastPosVar;
 end
 % Step Normalized Var
+try
 OutputRes.stepvar(SelIndex)=(Var-OutputRes.mean(SelIndex))./OutputRes.std(SelIndex);
+catch
+    'stop'
+end
 
 %Smoothing of percentile curves with sizer
 %RankGrid recovers the rank values used for interpolation

@@ -10,9 +10,7 @@
 %3- PpvCdf: the observed cumulative distribution frequency of Ppv
 %4- DisplayFlag: indicates if figures must be drawn or not
 %5- FigH: the figure handle
-%6- CurrColor: the color used to the current displayed curves
-%7- Title: the figure titles
-%8- SubPos: subplot position
+%7- SubPos: subplot position
 
 %OUTPUT PARAMETERS
 %1- Fdr: False Discovery Rate of Ppv
@@ -22,10 +20,11 @@
 %5- TruePosNb: estimate of the number of true variation
 
 %VERSIONS
+%V02 31-8-2010 Detect abnormal position of total variation estimation
 %V01 22-3-2010 Refactoring of the existing version
 
 
-function [Fdr,Sensitvity,TruePosNb]= fdr(ZVar,Ppv,PpvPv,PpvCdf,DisplayFlag,FigH,CurrColor,Title,SubPos)
+function [Fdr,Sensitivity,TruePosNb]= fdr(ZVar,Ppv,PpvPv,PpvCdf,DisplayFlag,FigH,SubPos)
 
 DataNb=length(PpvPv);
 
@@ -50,6 +49,7 @@ end
 PpvCdfMin=min(PpvCdf);
 PpvCdfMinPos=find(PpvCdf==PpvCdfMin);
 PpvCdfMinPos=PpvCdfMinPos(1);
+
 if PpvCdfMinPos>1
     h=warndlg(sprintf('fdr: position of first min(PpvCdf) >1 (%u)',PpvCdfMinPos));
     waitfor(h)
@@ -63,8 +63,19 @@ PpvPv(ZeroIndex)=eps;
 
 %ESTIMATION OF TRUE POSITIVE
 
+
+%If ppvCdf>PpvPv in the last 5% portion of ppvCdf change the ppvCdf values because it is not possible that all
+%probe sets have significant variation
+PlusPos=find(PpvCdf(end-round(DataNb*0.05):end)>PpvPv(end-round(DataNb*0.05):end));
+if ~isempty(PlusPos);
+    % find the first inversion
+    PlusPos=DataNb-(round(DataNb*0.05)-min(PlusPos))-2;   
+    PpvCdf(PlusPos:DataNb)=PpvPv(PlusPos:DataNb);
+end
+
 % True positive are the difference between observed and expected
 TpFreq=PpvCdf-PpvPv;
+
 % figure
 % plot(1./Ppv,(1-PpvCdf)./(1-PpvPv),'b')
 % hold on
@@ -189,13 +200,16 @@ PpvPv=PpvPv*Alpha;
 % True positive are the difference between observed and expected
 TpFreq=PpvCdf-PpvPv;
 MTpFreq=make_monotonous(TpFreq,'inc');
-TpNb=MTpFreq*DataNb;
+%take floor for TruePosNb and ceil for TpNb to make sure that the first
+%position is not misplaced at the end
+TruePosNb=floor(max(MTpFreq*DataNb));
+TpNb=ceil(MTpFreq*DataNb);
 NegIndex=find(TpNb<0);
  if ~isempty(NegIndex)
      TpNb(NegIndex)=0;
  end
  
- TruePosNb=max(TpNb);
+ 
     %TruePosNb=max(TpNb);
     if ~isempty(TruePosNb)
         %TruePosNb=TruePosNb(1);    
@@ -305,7 +319,7 @@ PositiveNb(ZeroIndex)=eps;
 SENS=TpNb./(PositiveNb);
 % When True positive is small, Sensitivity could be superior to one for small value of false negative
 SENS(SENS>1)=1;
-Sensitvity=make_monotonous(SENS,'inc');
+Sensitivity=make_monotonous(SENS,'inc');
 
 NegativeNb=TnNb+FpNb;
 ZeroIndex=find(NegativeNb==0);
@@ -343,18 +357,17 @@ if DisplayFlag==1
 %     plot(1./Ppv(FirstTpMaxNbPos),PpvCdf(FirstTpMaxNbPos),sprintf('%c+',CurrColor))
 %     line([1./Ppv(FirstTpMaxNbPos),1./Ppv(FirstTpMaxNbPos)],[0,Fdr(FirstTpMaxNbPos)],'color',CurrColor)
 %     line([1,1./Ppv(FirstTpMaxNbPos)],[Fdr(FirstTpMaxNbPos),Fdr(FirstTpMaxNbPos)],'color',CurrColor)    
-%    line([1./Ppv(Fdr10pc),1./Ppv(Fdr10pc)],[0,Sensitvity(Fdr10pc)],'color',CurrColor,'linestyle',':')
-%    line([1,1./Ppv(Fdr10pc)],[Sensitvity(Fdr10pc),Sensitvity(Fdr10pc)],'color',CurrColor,'linestyle',':')
+%    line([1./Ppv(Fdr10pc),1./Ppv(Fdr10pc)],[0,Sensitivity(Fdr10pc)],'color',CurrColor,'linestyle',':')
+%    line([1,1./Ppv(Fdr10pc)],[Sensitivity(Fdr10pc),Sensitivity(Fdr10pc)],'color',CurrColor,'linestyle',':')
 %           
 %     % Fdr & Sensibility
 %     plot(1./Ppv,Fdr,sprintf('%c-',CurrColor))
-%     plot(1./Ppv,Sensitvity,sprintf('%c:',CurrColor))
+%     plot(1./Ppv,Sensitivity,sprintf('%c:',CurrColor))
 %     
     figure(FigH)   
     subplot(1,2,SubPos)
     hold on   
-    if SubPos==1               
-        set(FigH,'name',Title)       
+    if SubPos==1                     
         Label=sprintf('zVar of Inc (%.f)',TruePosNb);
         CurrColor='r';
         title('                                                             FDR(-), Sensitivity(..), cdf((ppv)|Ho)(black -) and cdf(ppv)(--)')    
@@ -375,12 +388,12 @@ if DisplayFlag==1
     plot(ZVar(FirstTpMaxNbPos),PpvCdf(FirstTpMaxNbPos),sprintf('%c+',CurrColor))
     line([ZVar(FirstTpMaxNbPos),ZVar(FirstTpMaxNbPos)],[0,Fdr(FirstTpMaxNbPos)],'color',CurrColor)
     line([1,ZVar(FirstTpMaxNbPos)],[Fdr(FirstTpMaxNbPos),Fdr(FirstTpMaxNbPos)],'color',CurrColor)    
-   line([ZVar(Fdr10pc),ZVar(Fdr10pc)],[0,Sensitvity(Fdr10pc)],'color',CurrColor,'linestyle',':')
-   line([1,ZVar(Fdr10pc)],[Sensitvity(Fdr10pc),Sensitvity(Fdr10pc)],'color',CurrColor,'linestyle',':')
+   line([ZVar(Fdr10pc),ZVar(Fdr10pc)],[0,Sensitivity(Fdr10pc)],'color',CurrColor,'linestyle',':')
+   line([1,ZVar(Fdr10pc)],[Sensitivity(Fdr10pc),Sensitivity(Fdr10pc)],'color',CurrColor,'linestyle',':')
           
     % Fdr & Sensibility
     plot(ZVar,Fdr,sprintf('%c-',CurrColor))
-    plot(ZVar,Sensitvity,sprintf('%c:',CurrColor))
+    plot(ZVar,Sensitivity,sprintf('%c:',CurrColor))
     
     set(gca,'box','on')    
     xlabel(Label)

@@ -10,6 +10,7 @@
 % PPvCdf: the probabilities for Ppv
 
 %VERSION
+%V02 22-06-2010 Test first value [PpvVal,PpvCdf]=[0,0];
 %V01 14-04-2010 
 %       Translated from C program with this Copyright
 %       Copyrights Orestis Georgiou   25-8-09
@@ -31,7 +32,8 @@ PpvCdf=[];
 a=eps;
 b=1;
 %construct the list of Ppv values
-PpvList=(0.01:0.01:1)'.^ProdNb;
+%PpvList=(0.01:0.01:1)'.^ProdNb;
+PpvList=(0:0.01:1)'.^ProdNb;
 for PpvL=1:length(PpvList)
     Ppv=PpvList(PpvL);
     PpvProb=0;
@@ -48,9 +50,14 @@ for PpvL=1:length(PpvList)
     PpvProb=PpvProb+FPpvVal-F1Val;
     PpvCdf=[PpvCdf;PpvProb];
 end
-%add 0
-PpvList=[0;PpvList];
-PpvCdf=[0;PpvCdf];
+%add 0 if necessary
+if PpvList(1)~=0
+    PpvList=[0;PpvList];
+    PpvCdf=[0;PpvCdf];
+else
+    PpvCdf(1)=0;
+end
+        
 
 function FVal=F(a,b,Test,ProdNb,Val)
 FVal=0;

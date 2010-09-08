@@ -8,15 +8,17 @@
 %INPUT PARAMETERS
 %1- Val : values that must be rendered monotonous
 %2- Type : either inc (monotonous increasing) or dec (monotonous decreasing)
-%3- FlipFlag : if ==1 flip the data before makinf them monotonous
+%3- FlipFlag : if ==1 flip the data before making them monotonous
 
 
 %OUTPUT PARAMETERS
 %1- Val : values made monotonous
 
 %VERSIONS
-%V01 22-03-2010 Refactorinf of the existing version
-%V02 14-04-2010 Add FlipFlag
+% V03 25-07-2010 Detect outliers
+% V02 14-04-2010 Add FlipFlag
+% V01 22-03-2010 Refactorinf of the existing version
+
 
 function Val=make_monotonous (Val,Type,varargin)
 
@@ -46,18 +48,34 @@ if FlipFlag==1
     end
 end
 
-LastVal=Val(1);
+%statistics on interval
+
+ValDiff=abs(diff(Val));
+%eliminate zero values which can bias the Limit estimation if there are
+%numerous
+MemValDiff=ValDiff;
+ValDiff(ValDiff==0)=[];
+Limit=mean(ValDiff)+2*std(ValDiff);
+ValDiff=MemValDiff;
+%test the first value
+if ValDiff(1)>Limit
+    Pos=find(ValDiff<=Limit); 
+    LastVal=Val(Pos(1));
+    Val(1)=LastVal;
+else
+    LastVal=Val(1);
+end
 if isequal(Type,'inc')
-    for i=1:length(Val)
-        if Val(i)<LastVal
+    for i=2:length(Val)
+        if Val(i)<LastVal|ValDiff(i-1)>Limit
             Val(i)=LastVal;
         else
             LastVal=Val(i);
         end
     end
 elseif isequal(Type,'dec')
-    for i=1:length(Val)
-        if Val(i)>LastVal
+    for i=2:length(Val)
+        if Val(i)>LastVal|ValDiff(i-1)>Limit
             Val(i)=LastVal;
         else
             LastVal=Val(i);

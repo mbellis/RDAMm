@@ -164,7 +164,7 @@ if ~isequal(AnalyseType,'chipchip')
     end
 end
 
-CalibName=sprintf('P%03u(BL) & P%03us(HL)',BLRank,HLRank);
+CalibName=sprintf('P%03u(BL) & P%03u(HL)',BLRank,HLRank);
 
 
 if DisplayFlag==1
@@ -225,13 +225,14 @@ if isequal(NormType,'quantile')
             %error if some X values are equal
             IdemRank=find(diff(PercVal(:,GridL))==0);
             while ~isempty(IdemRank)
-                PercVal(IdemRank,GridL)=PercVal(IdemRank,GridL)+rand(length(IdemRank),1)*eps;
+                PercVal(IdemRank,GridL)=PercVal(IdemRank,GridL)+randperm(length(IdemRank))'*2*eps;              
                 try
                     ZVarGrid(:,GridL)=interp1(PercVal(:,GridL),FractVal,VarGrid,'linear')';
-                catch               
+                catch
                 end
                 IdemRank=find(diff(PercVal(:,GridL))==0);
             end
+            
         end
     end
     if ~isempty(find(isnan(ZVarGrid)))
