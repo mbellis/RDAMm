@@ -35,9 +35,9 @@
 %INPUT PARAMETERS
 %1- ChipRank indicates the rank of the chip used (e.g. HG U74 has four chips A,B,C,D)
 %2- CompScheme : The comparisons to be made
-%3- TGRankList and CGRankList: list of data ranks used in the comparisons
+%3&4- TGRankList and CGRankList: list of data ranks used in the comparisons
 %   if TGRankList=[12,15,23], and ChipRank = 1, the Data used for TG point in position 1 is Data{12}{1}.rank
-%4&5- LoadDataFlag = 1 indicates that each data point must be loaded when to be used (no permanent storage of Data in the memory)
+%5- LoadDataFlag = 1 indicates that each data point must be loaded when to be used (no permanent storage of Data in the memory)
 %6- RankThreshold: a vector of two values allowing to start the process of constructing quantile curves using
 %   a defined range of rank values (>=RankThreshold(1)&<=RankThreshold(2))
 %7- CalibType indicates the type of couple of two replicates used to calculate the calibration set for the current comparison.
@@ -63,6 +63,8 @@
 %15- CalibSaveFlag: indicates if the output of noise_distribution must be saved or not
 %16- DisplayFlag: indicates if figures must be drawn or not
 %17- ComparisonFlag: indicates if the comparison must be done (if not the function is simply used to construct calibration sets which are stored in S.calib)
+%18- CalibSchemeFlag: indicates that a particular combination of
+%    calibration set is used (e.g. in double chanel technics)
 
 
 %VARARGIN PARAMETERS
@@ -76,6 +78,7 @@
 % Ppv : product of p-values (from 0 to 1 for INCREASED and -1 to 0 for DECREASED)
 % Pv : p-value of Ppv  (from 0 to 1 for INCREASED and -1 to 0 for DECREASED)
 % Sensitivity (from 0 to 1 for INCREASED and -1 to 0 for DECREASED)
+% TotalVar : estimate of the total number of increased and decreased probe sets
 
 %GLOBAL VARIABLES
 % Data contains data ranks (if LoadDataFlag==1, Data does not exist)
@@ -84,14 +87,29 @@
 % S contains calibration sets
 
 %VERSIONS
-%V03 19-1-2010 Completely refactored version
-%V02 19-1-2010 Completely refactored version but for internal usage (comparison with previous results)
-%V01 9-12-2009 - Refactoring of the existing version (not complete)
+%V04 14-03-2010 Allows comparison between two points (without replicates)
+%               Added CalibScheme to extend calibration possibilities
+%V03 19-01-2010 Completely refactored version
+%V02 19-01-2010 Completely refactored version but for internal usage (comparison with previous results)
+%V01 09-12-2009 - Refactoring of the existing version (not complete)
 
-function [ZVar,Pv,Ppv,Fdr,Sensitivity]=rdam(ChipRank,CompScheme,TGRankList,CGRankList,LoadDataFlag,RankThreshold,CalibType,ClearIndex,NormType,...
-    AnalyseType,SizerFittingDegree,SingleCalibPointFlag,SingleCalibCurveFlag,CalibUpdateFlag,CalibSaveFlag,DisplayFlag,ComparisonFlag,varargin)
+function [ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(ChipRank,CompScheme,TGRankList,CGRankList,LoadDataFlag,RankThreshold,CalibType,ClearIndex,NormType,...
+    AnalyseType,SizerFittingDegree,SingleCalibPointFlag,SingleCalibCurveFlag,CalibUpdateFlag,CalibSaveFlag,DisplayFlag,ComparisonFlag,CalibSchemeFlag,varargin)
+
 %with SaveFlag=1
 %rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,0,0,0);
+%exemple used in processing double chanel chip
+%Create calibration sets
+%rdam(1,{[1,2;1,2]},[5,6],[1,2],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,0,0);
+%rdam(1,{[1,2;1,2]},[7,8],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,0,0);
+%rdam(1,{[1,2;1,2]},[1,5],[2,6],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,0,0);
+%rdam(1,{[1,2;1,2]},[3,7],[4,8],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,0,0);
+%Do analysis by indicating the calibration sets to be used in each comparison
+%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(1,{[1,2;1,2]},[5,6],[1,2],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,1,0);
+%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(1,{[1,2;1,2]},[7,8],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,1,0);
+%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(1,{[1,2,3,4;1,2,3,4]},[5,6,7,8],[1,2,3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,1,1,{[1,1,3,3;2,2,4,4;3,3,3,3]});
+%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(1,{[1,2,3,4;1,2,3,4]},[5,6,7,8],[1,2,3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,1,1,{[1,2,3,4;5,6,7,8;3,3,3,3]});
+
 %with CalibUpdateFlag=1 & SaveFlag=0
 %rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,1,0,0,0,0);
 %with ComparisonFlag=1 & SaveFlag=1 & DisplayFlag=1
@@ -99,12 +117,13 @@ function [ZVar,Pv,Ppv,Fdr,Sensitivity]=rdam(ChipRank,CompScheme,TGRankList,CGRan
 %rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'up',[],'quantile','transcriptome',7,0,0,0,0,0,0,0);
 %rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'standardization','transcriptome',7,0,0,0,0,0,0,0);
 %rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'down',[],'standardization','transcriptome',7,0,0,0,0,0,0,0);
+
 global Data K P S
 
 %% Verifications
 if SingleCalibPointFlag==1
-    if nargin~=19
-        h=errordlg('must have 19 parameters');
+    if nargin~=20
+        h=errordlg('must have 20 parameters');
         waitfor(h)
     else
         HLCalibRank=varargin{1};
@@ -121,16 +140,28 @@ if SingleCalibPointFlag==1
         end
     end
 elseif SingleCalibCurveFlag==1
-    if nargin~=19
-        h=errordlg('must have 19 parameters');
+    if nargin~=20
+        h=errordlg('must have 20 parameters');
         waitfor(h)
     else
         CurrZVal=varargin{1};
         CurrZVarCdf=varargin{2};
     end
+elseif CalibSchemeFlag==1
+    if nargin~=19
+        h=errordlg('must have 19 parameters');
+        waitfor(h)
+    else
+        %CalibScheme gives the coordinates of the test curve in S.calib for
+        %each comparison (e.g for CompScheme = {[1,2,3,4;1,2,3,4]} & TG=[7,8,9,10] & CG=[11,12,13,14]=>
+        %CalibScheme = {[7,7,13,13;8,8,14,14;3,3,3,]} indicates that for
+        %comparison between first Test point (rank 7) and the first Control
+        %point (rank 11), the test curve used is located at S.calib{3}(7,8)
+        CalibScheme=varargin{1};
+    end
 else
-    if nargin~=17
-        h=errordlg('must have 17 parameters');
+    if nargin~=18
+        h=errordlg('must have 18 parameters');
         waitfor(h)
     end
 end
@@ -195,45 +226,6 @@ for RoundL=1:RoundNb
         end
 
         if SingleCalibCurveFlag==0
-            CalibRanks=zeros(2,2);
-            %VERIFY THAT NEEDED CALIBRATION SETS EXIST OR CONSTRUCT THEM
-            if isequal(CalibType,'idem')
-                if SingleCalibPointFlag==1
-                    CalibRanks(1,1)=min(HLCalibRank,HLRanks(1));
-                    CalibRanks(1,2)=max(HLCalibRank,HLRanks(1));
-                else
-                    CalibRanks(1,1)=min(HLRanks(1),HLRanks(2));
-                    CalibRanks(1,2)=max(HLRanks(1),HLRanks(2));
-                end
-                if SingleCalibPointFlag==1
-                    CalibRanks(2,1)=min(BLCalibRank,BLRanks(1));
-                    CalibRanks(2,2)=max(BLCalibRank,BLRanks(1));
-                else
-                    CalibRanks(2,1)=min(BLRanks(1),BLRanks(2));
-                    CalibRanks(2,2)=max(BLRanks(1),BLRanks(2));
-                end
-            else %up or down case
-                if SingleCalibPointFlag==1
-                    CalibRanks(1,1)=HLCalibRank;
-                    CalibRanks(1,2)=BLCalibRank;
-                else
-                    CalibRanks(1,1)=HLRanks(1);
-                    CalibRanks(1,2)=BLRanks(1);
-                end
-            end
-
-            % if calibration set is constructed on true replicates (same biological conditions) the
-            % order of BLRank and HLRank does not matter but there exist only one test curve in
-            % S.calib (at S.calib.testcurve{ChipRank}(min(BLRank,HLRank),max(BLRank,HLRank))
-
-            %if calibration set is constructed on points from different biological condition
-            %there exist two different test curves one constructed on increased values in the comparison
-            %max(BLRanks,HLRanks) vs min(BLRanks,HLRanks) (at S.calib.testcurve{ChipRank}(min(BLRank,HLRank),max(BLRank,HLRank))
-            %and one on decreased values in the comparisons
-            %max(BLRanks,HLRanks) vs min(BLRanks,HLRanks) (at S.calib.testcurve{ChipRank}(max(BLRank,HLRank),min(BLRank,HLRank))
-
-            ExistCalib(1)=0;
-            ExistCalib(2)=0;
             if isequal(NormType,'standardization')
                 if isequal(CalibType,'idem')
                     CalibRank=1;
@@ -247,146 +239,186 @@ for RoundL=1:RoundNb
                     CalibRank=4;
                 end
             end
-
-            if SingleCalibPointFlag==1
-                CalibNb=1;
-            else
-                CalibNb=2;
-            end
-
-            if isfield(S,'calib')
-                for CalibL=1:CalibNb
-                    switch CalibType
-                        case 'idem'
-                            try
-                                if S.calib.testsurf{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))>0
-                                    if isempty(ClearIndex)
-                                        %the existing calibration set must have its clearflag set to 0
-                                        if S.calib.clearflag{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==0
-                                            ExistCalib(CalibL)=1;
-                                        end
-                                    else
-                                        %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
-                                        %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
-                                        if S.calib.clearflag{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==1
-                                            ExistCalib(CalibL)=1;
-                                        end
-                                    end
-                                end
-                            catch
-                                'pass';
-                            end
-                        case 'up'
-                            try
-                                if S.calib.testsurf{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))>0
-                                    if isempty(ClearIndex)
-                                        %the existing calibration set must have its clearflag set to 0
-                                        if S.calib.clearindex{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==0
-                                            ExistCalib(CalibL)=1;
-                                        end
-                                    else
-                                        %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
-                                        %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
-                                        if S.calib.clearindex{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==1
-                                            ExistCalib(CalibL)=1;
-                                        end
-                                    end
-                                end
-                            catch
-                            end
-                        case 'down'
-                            try
-                                if S.calib.testsurf{ChipRank}{CalibRank}(max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))>0
-                                    if isempty(ClearIndex)
-                                        %the existing calibration set must have its clearflag set to 0
-                                        if S.calib.clearflag{ChipRank}{CalibRank}(max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==0
-                                            ExistCalib(CalibL)=1;
-                                        end
-                                    else
-                                        %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
-                                        %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
-                                        if S.calib.clearflag{ChipRank}{CalibRank}(max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==1
-                                            ExistCalib(CalibL)=1;
-                                        end
-                                    end
-                                end
-                            catch
-                            end
+            if CalibSchemeFlag==0
+                CalibRanks=zeros(2,2);
+                %VERIFY THAT NEEDED CALIBRATION SETS EXIST OR CONSTRUCT THEM
+                if isequal(CalibType,'idem')
+                    if SingleCalibPointFlag==1
+                        CalibRanks(1,1)=min(HLCalibRank,HLRanks(1));
+                        CalibRanks(1,2)=max(HLCalibRank,HLRanks(1));
+                    else
+                        CalibRanks(1,1)=min(HLRanks(1),HLRanks(2));
+                        CalibRanks(1,2)=max(HLRanks(1),HLRanks(2));
+                    end
+                    if SingleCalibPointFlag==1
+                        CalibRanks(2,1)=min(BLCalibRank,BLRanks(1));
+                        CalibRanks(2,2)=max(BLCalibRank,BLRanks(1));
+                    else
+                        CalibRanks(2,1)=min(BLRanks(1),BLRanks(2));
+                        CalibRanks(2,2)=max(BLRanks(1),BLRanks(2));
+                    end
+                else %up or down case
+                    if SingleCalibPointFlag==1
+                        CalibRanks(1,1)=HLCalibRank;
+                        CalibRanks(1,2)=BLCalibRank;
+                    else
+                        CalibRanks(1,1)=HLRanks(1);
+                        CalibRanks(1,2)=BLRanks(1);
                     end
                 end
-            end
-            if ExistCalib(1)==0|(ExistCalib(2)==0&CalibNb==2)|CalibUpdateFlag==1
-                %calculate calibration sets and save results in S.calib
-                for CalibL=1:CalibNb
-                    if ExistCalib(CalibL)==0|CalibUpdateFlag==1
-                        [HL,BL]=getdata(ChipRank,CalibRanks(CalibL,1),CalibRanks(CalibL,2),LoadDataFlag);
-                        [RankGrid,Grid,ZVarGrid,ZVar]=noise_distribution(HL,BL,RankThreshold,CalibRanks(CalibL,1),CalibRanks(CalibL,2),ClearIndex,NormType,AnalyseType,CalibType,SizerFittingDegree,DisplayFlag);
-                        clear HL BL
-                        %Recover results in S.calib structure
-                        if isequal(NormType,'standardization')
-                            %construct the test curve at a distance + one std of the mean
-                            %the test curve is used to compare the dispersion of the data in a pair of replicates
-                            %it allows to use the pair of replicates with the highest dispersion when a comparison is to be made
-                            % between two conditions
-                            TestCurve=Grid.std+ Grid.mean;
-                        elseif isequal(NormType,'quantile')
-                            %take the median for calculating the test curve
-                            TestCurve=Grid.perc{5};
-                        end
-                        switch CalibType
-                            %find the line and column position in S to store the calibration set
-                            case 'idem'
-                                SLine=CalibRanks(CalibL,1);
-                                SColumn=CalibRanks(CalibL,2);
-                            case 'up'
-                                SLine=min(CalibRanks(CalibL,1),CalibRanks(CalibL,2));
-                                SColumn=max(CalibRanks(CalibL,1),CalibRanks(CalibL,2));
-                            case 'down'
-                                SLine=max(CalibRanks(CalibL,1),CalibRanks(CalibL,2));
-                                SColumn=min(CalibRanks(CalibL,1),CalibRanks(CalibL,2));
-                        end
-                        if isempty(ClearIndex)
-                            S.calib.clearflag{ChipRank}{CalibRank}(SLine,SColumn)=uint8(0);
-                        else
-                            S.calib.clearflag{ChipRank}{CalibRank}(SLine,SColumn)=uint8(1);
-                        end
-                        S.calib.testcurve{ChipRank}{CalibRank}{SLine,SColumn}=single(TestCurve);
-                        %normalize on the maximum possible (surface under the diagonal = 401 points * 100
-                        %(max value possible) /20050) => 0 <= testsurf <= 1
-                        S.calib.testsurf{ChipRank}{CalibRank}(SLine,SColumn)=single(sum(TestCurve)/20050);
-                        S.calib.mean{ChipRank}{CalibRank}{SLine,SColumn}=single(Grid.mean);
-                        S.calib.std{ChipRank}{CalibRank}{SLine,SColumn}=single(Grid.std);
-                        %recover the p-value corresponding to ZVar
-                        [Temp,Temp,ZVar,ZVarCdf,MinZVar,MaxZVar]=cumul_distribution(ZVar,[],1,0);
-                        if max(ZVar)<100
-                            ZVar=[ZVar;100];
-                            %add a p-value equal to the 1/10th of the last existing p-value
-                            ZVarCdf=[ZVarCdf;ZVarCdf(end)/10];
-                        end
-                        %Keep p-values corresponding to interpolation values
-                        ZVarRange=0:0.25:100;
-                        ZVarCdf=interp1(ZVar,ZVarCdf,ZVarRange);
-                        if isnan(ZVarCdf(1))
-                            ZVarCdf(1)=1;
-                        end
-                        S.calib.zvar{ChipRank}{CalibRank}{SLine,SColumn}=single(ZVarRange);
-                        S.calib.cdf{ChipRank}{CalibRank}{SLine,SColumn}=single(ZVarCdf);
-                        S.calib.minzvar{ChipRank}{CalibRank}(SLine,SColumn)=single(MinZVar);
-                        S.calib.maxzvar{ChipRank}{CalibRank}(SLine,SColumn)=single(MaxZVar);
-                        S.calib.zval{ChipRank}{CalibRank}{SLine,SColumn}=single(ZVarGrid);
 
-                        if CalibSaveFlag==1
-                            cd(K.dir.root);
-                            save data Data K P S
-                            %in the definitive vertion :
-                            %cd(K.dir.stat)
-                            %eval(sprintf('save %s S',P.file.stat))
-                        else
-                            CurrZVal{CalibL}=single(ZVarGrid);
-                            CurrZVarCdf{CalibL}=single(ZVarCdf);
-                            CurrTestSurf(CalibL)=single(sum(TestCurve)/20050);
-                            CurrMinZVar(CalibL)=single(MinZVar);
-                            CurrMaxZVar(CalibL)=single(MaxZVar);
+                % if calibration set is constructed on true replicates (same biological conditions) the
+                % order of BLRank and HLRank does not matter but there exist only one test curve in
+                % S.calib (at S.calib.testcurve{ChipRank}(min(BLRank,HLRank),max(BLRank,HLRank))
+
+                %if calibration set is constructed on points from different biological condition
+                %there exist two different test curves one constructed on increased values in the comparison
+                %max(BLRanks,HLRanks) vs min(BLRanks,HLRanks) (at S.calib.testcurve{ChipRank}(min(BLRank,HLRank),max(BLRank,HLRank))
+                %and one on decreased values in the comparisons
+                %max(BLRanks,HLRanks) vs min(BLRanks,HLRanks) (at S.calib.testcurve{ChipRank}(max(BLRank,HLRank),min(BLRank,HLRank))
+
+                ExistCalib(1)=0;
+                ExistCalib(2)=0;                
+
+                if SingleCalibPointFlag==1
+                    CalibNb=1;
+                else
+                    CalibNb=2;
+                end
+
+                if isfield(S,'calib')
+                    for CalibL=1:CalibNb
+                        switch CalibType
+                            case 'idem'
+                                try
+                                    if S.calib.testsurf{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))>0
+                                        if isempty(ClearIndex)
+                                            %the existing calibration set must have its clearflag set to 0
+                                            if S.calib.clearflag{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==0
+                                                ExistCalib(CalibL)=1;
+                                            end
+                                        else
+                                            %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
+                                            %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
+                                            if S.calib.clearflag{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==1
+                                                ExistCalib(CalibL)=1;
+                                            end
+                                        end
+                                    end
+                                catch                                    
+                                end
+                            case 'up'
+                                try
+                                    if S.calib.testsurf{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))>0
+                                        if isempty(ClearIndex)
+                                            %the existing calibration set must have its clearflag set to 0
+                                            if S.calib.clearindex{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==0
+                                                ExistCalib(CalibL)=1;
+                                            end
+                                        else
+                                            %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
+                                            %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
+                                            if S.calib.clearindex{ChipRank}{CalibRank}(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==1
+                                                ExistCalib(CalibL)=1;
+                                            end
+                                        end
+                                    end
+                                catch
+                                end
+                            case 'down'
+                                try
+                                    if S.calib.testsurf{ChipRank}{CalibRank}(max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))>0
+                                        if isempty(ClearIndex)
+                                            %the existing calibration set must have its clearflag set to 0
+                                            if S.calib.clearflag{ChipRank}{CalibRank}(max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==0
+                                                ExistCalib(CalibL)=1;
+                                            end
+                                        else
+                                            %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
+                                            %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
+                                            if S.calib.clearflag{ChipRank}{CalibRank}(max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==1
+                                                ExistCalib(CalibL)=1;
+                                            end
+                                        end
+                                    end
+                                catch
+                                end
+                        end
+                    end
+                end
+                if ExistCalib(1)==0|(ExistCalib(2)==0&CalibNb==2)|CalibUpdateFlag==1
+                    %calculate calibration sets and save results in S.calib
+                    for CalibL=1:CalibNb
+                        if ExistCalib(CalibL)==0|CalibUpdateFlag==1
+                            [HL,BL]=getdata(ChipRank,CalibRanks(CalibL,1),CalibRanks(CalibL,2),LoadDataFlag);
+                            [RankGrid,Grid,ZVarGrid,ZVar]=noise_distribution(HL,BL,RankThreshold,CalibRanks(CalibL,1),CalibRanks(CalibL,2),ClearIndex,NormType,AnalyseType,CalibType,SizerFittingDegree,DisplayFlag);
+                            clear HL BL
+                            %Recover results in S.calib structure
+                            if isequal(NormType,'standardization')
+                                %construct the test curve at a distance + one std of the mean
+                                %the test curve is used to compare the dispersion of the data in a pair of replicates
+                                %it allows to use the pair of replicates with the highest dispersion when a comparison is to be made
+                                % between two conditions
+                                TestCurve=Grid.std+ Grid.mean;
+                            elseif isequal(NormType,'quantile')
+                                %take the median for calculating the test curve
+                                TestCurve=Grid.perc{5};
+                            end
+                            switch CalibType
+                                %find the line and column position in S to store the calibration set
+                                case 'idem'
+                                    SLine=CalibRanks(CalibL,1);
+                                    SColumn=CalibRanks(CalibL,2);
+                                case 'up'
+                                    SLine=min(CalibRanks(CalibL,1),CalibRanks(CalibL,2));
+                                    SColumn=max(CalibRanks(CalibL,1),CalibRanks(CalibL,2));
+                                case 'down'
+                                    SLine=max(CalibRanks(CalibL,1),CalibRanks(CalibL,2));
+                                    SColumn=min(CalibRanks(CalibL,1),CalibRanks(CalibL,2));
+                            end
+                            if isempty(ClearIndex)
+                                S.calib.clearflag{ChipRank}{CalibRank}(SLine,SColumn)=uint8(0);
+                            else
+                                S.calib.clearflag{ChipRank}{CalibRank}(SLine,SColumn)=uint8(1);
+                            end
+                            S.calib.testcurve{ChipRank}{CalibRank}{SLine,SColumn}=single(TestCurve);
+                            %normalize on the maximum possible (surface under the diagonal = 401 points * 100
+                            %(max value possible) /20050) => 0 <= testsurf <= 1
+                            S.calib.testsurf{ChipRank}{CalibRank}(SLine,SColumn)=single(sum(TestCurve)/20050);
+                            S.calib.mean{ChipRank}{CalibRank}{SLine,SColumn}=single(Grid.mean);
+                            S.calib.std{ChipRank}{CalibRank}{SLine,SColumn}=single(Grid.std);
+                            %recover the p-value corresponding to ZVar
+                            [Temp,Temp,ZVar,ZVarCdf,MinZVar,MaxZVar]=cumul_distribution(ZVar,[],1,0);
+                            if max(ZVar)<100
+                                ZVar=[ZVar;100];
+                                %add a p-value equal to the 1/10th of the last existing p-value
+                                ZVarCdf=[ZVarCdf;ZVarCdf(end)/10];
+                            end
+                            %Keep p-values corresponding to interpolation values
+                            ZVarRange=0:0.25:100;
+                            ZVarCdf=interp1(ZVar,ZVarCdf,ZVarRange);
+                            if isnan(ZVarCdf(1))
+                                ZVarCdf(1)=1;
+                            end
+                            S.calib.zvar{ChipRank}{CalibRank}{SLine,SColumn}=single(ZVarRange);
+                            S.calib.cdf{ChipRank}{CalibRank}{SLine,SColumn}=single(ZVarCdf);
+                            S.calib.minzvar{ChipRank}{CalibRank}(SLine,SColumn)=single(MinZVar);
+                            S.calib.maxzvar{ChipRank}{CalibRank}(SLine,SColumn)=single(MaxZVar);
+                            S.calib.zval{ChipRank}{CalibRank}{SLine,SColumn}=single(ZVarGrid);
+
+                            if CalibSaveFlag==1
+                                cd(K.dir.root);
+                                save data Data K P S
+                                %in the definitive vertion :
+                                %cd(K.dir.stat)
+                                %eval(sprintf('save %s S',P.file.stat))
+                            else
+                                CurrZVal{CalibL}=single(ZVarGrid);
+                                CurrZVarCdf{CalibL}=single(ZVarCdf);
+                                CurrTestSurf(CalibL)=single(sum(TestCurve)/20050);
+                                CurrMinZVar(CalibL)=single(MinZVar);
+                                CurrMaxZVar(CalibL)=single(MaxZVar);
+                            end
                         end
                     end
                 end
@@ -407,53 +439,62 @@ for RoundL=1:RoundNb
             end
 
             if SingleCalibCurveFlag==0
-
-                % select the right calibration set (those which correspond to the pair of replicates having
-                % the highest dispersion  (less reproducible pair in order not to overestimate the p-values)
-                switch CalibType
-                    case 'idem'
-                        if CalibSaveFlag==1
-                            if S.calib.testsurf{ChipRank}{CalibRank}(CalibRanks(1,1),CalibRanks(1,2))>S.calib.testsurf{ChipRank}{CalibRank}(CalibRanks(2,1),CalibRanks(2,2))
-                                CLine=1;
+                if CalibSchemeFlag==0
+                    % select the right calibration set (those which correspond to the pair of replicates having
+                    % the highest dispersion  (less reproducible pair in order not to overestimate the p-values)
+                    switch CalibType
+                        case 'idem'
+                            if CalibSaveFlag==1
+                                if S.calib.testsurf{ChipRank}{CalibRank}(CalibRanks(1,1),CalibRanks(1,2))>S.calib.testsurf{ChipRank}{CalibRank}(CalibRanks(2,1),CalibRanks(2,2))
+                                    CLine=1;
+                                else
+                                    CLine=2;
+                                end
+                                CurrZVal=S.calib.zval{ChipRank}{CalibRank}{CalibRanks(CLine,1),CalibRanks(CLine,2)};
+                                CurrZVarCdf=S.calib.cdf{ChipRank}{CalibRank}{CalibRanks(CLine,1),CalibRanks(CLine,2)};
+                                CurrMinZVar=S.calib.minzvar{ChipRank}{CalibRank}(CalibRanks(CLine,1),CalibRanks(CLine,2));
+                                CurrMaxZVar=S.calib.maxzvar{ChipRank}{CalibRank}(CalibRanks(CLine,1),CalibRanks(CLine,2));
                             else
-                                CLine=2;
+                                if CurrTestSurf(1)>CurrTestSurf(2)
+                                    CurrZVal=CurrZVal{1};
+                                    CurrZVarCdf=CurrZVarCdf{1};
+                                    CurrMinZVar=CurrMinZVar(1);
+                                    CurrMaxZVar=CurrMaxZVar(1);
+                                else
+                                    CurrZVal=CurrZVal{2};
+                                    CurrZVarCdf=CurrZVarCdf{2};
+                                    CurrMinZVar=CurrMinZVar(2);
+                                    CurrMaxZVar=CurrMaxZVar(2);
+                                end
                             end
-                            CurrZVal=S.calib.zval{ChipRank}{CalibRank}{CalibRanks(CLine,1),CalibRanks(CLine,2)};
-                            CurrZVarCdf=S.calib.cdf{ChipRank}{CalibRank}{CalibRanks(CLine,1),CalibRanks(CLine,2)};
-                            CurrMinZVar=S.calib.minzvar{ChipRank}{CalibRank}(CalibRanks(CLine,1),CalibRanks(CLine,2));
-                            CurrMaxZVar=S.calib.maxzvar{ChipRank}{CalibRank}(CalibRanks(CLine,1),CalibRanks(CLine,2));
-                        else
-                            if CurrTestSurf(1)>CurrTestSurf(2)
+                        case {'up','down'}
+                            if CalibSaveFlag==1
+                                if isequal(CalibType,'up')
+                                    SLine=CalibRanks(1,1);
+                                    SColumn=CalibRanks(1,2);
+                                else
+                                    SLine=CalibRanks(1,2);
+                                    SColumn=CalibRanks(1,1);
+                                end
+                                CurrZVal=S.calib.zval{ChipRank}{CalibRank}{SLine,SColumn};
+                                CurrZVarCdf=S.calib.cdf{ChipRank}{CalibRank}{SLine,SColumn};
+                                CurrMinZVar=S.calib.minzvar{ChipRank}{CalibRank}(SLine,SColumn);
+                                CurrMaxZVar=S.calib.maxzvar{ChipRank}{CalibRank}(SLine,SColumn);
+                            else
                                 CurrZVal=CurrZVal{1};
                                 CurrZVarCdf=CurrZVarCdf{1};
                                 CurrMinZVar=CurrMinZVar(1);
                                 CurrMaxZVar=CurrMaxZVar(1);
-                            else
-                                CurrZVal=CurrZVal{2};
-                                CurrZVarCdf=CurrZVarCdf{2};
-                                CurrMinZVar=CurrMinZVar(2);
-                                CurrMaxZVar=CurrMaxZVar(2);
                             end
-                        end
-                    case {'up','down'}
-                        if CalibSaveFlag==1
-                            if isequal(CalibType,'up')
-                                SLine=CalibRanks(1,1);
-                                SColumn=CalibRanks(1,2);
-                            else
-                                SLine=CalibRanks(1,2);
-                                SColumn=CalibRanks(1,1);
-                            end
-                            CurrZVal=S.calib.zval{ChipRank}{CalibRank}{SLine,SColumn};
-                            CurrZVarCdf=S.calib.cdf{ChipRank}{CalibRank}{SLine,SColumn};
-                            CurrMinZVar=S.calib.minzrd{ChipRank}{CalibRank}(SLine,SColumn);
-                            CurrMaxZVar=S.calib.maxzrd{ChipRank}{CalibRank}(SLine,SColumn);
-                        else
-                            CurrZVal=CurrZVal{1};
-                            CurrZVarCdf=CurrZVarCdf{1};
-                            CurrMinZVar=CurrMinZVar(1);
-                            CurrMaxZVar=CurrMaxZVar(1);
-                        end
+                    end
+                else
+                    SLine=CalibScheme{RoundL}(1,CompL);
+                    SColumn=CalibScheme{RoundL}(2,CompL);
+                    CalibRank=CalibScheme{RoundL}(3,CompL);
+                    CurrZVal=S.calib.zval{ChipRank}{CalibRank}{SLine,SColumn};
+                    CurrZVarCdf=S.calib.cdf{ChipRank}{CalibRank}{SLine,SColumn};
+                    CurrMinZVar=S.calib.minzvar{ChipRank}{CalibRank}(SLine,SColumn);
+                    CurrMaxZVar=S.calib.maxzvar{ChipRank}{CalibRank}(SLine,SColumn);
                 end
             end
             if length(find(HL==BL))==length(BL)
@@ -464,71 +505,75 @@ for RoundL=1:RoundNb
             end
         end %if ComparisonFlag==1
     end %of CompL
-    if CompNb(RoundL)>1
-        [ZVar(:,RoundL),Pv(:,RoundL),Ppv(:,RoundL)]=getppv(CurrZVar,CurrPv,single(P.ppv.val{CompNb(RoundL)}),single(P.ppv.cdf{CompNb(RoundL)}),DisplayFlag);
-    else
-        ZVar(:,RoundL)=CurrZVar;
-        Pv(:,RoundL)=CurrPv;
-        Ppv(:,RoundL)=CurrPv;
-    end
-    if DisplayFlag==1 & RoundL==2
-
-        figure
-        IncIndex=ZVar(:,1)>0;
-        DecIndex=ZVar(:,1)<0;
-        subplot(2,2,1)
-        plot(Data{1}{1}.rank-Data{3}{1}.rank,Data{2}{1}.rank-Data{4}{1}.rank,'k.','markersize',3)
-        hold on
-        plot(Data{1}{1}.rank(IncIndex)-Data{3}{1}.rank(IncIndex),Data{2}{1}.rank(IncIndex)-Data{4}{1}.rank(IncIndex),'r.','markersize',3)
-        plot(Data{1}{1}.rank(DecIndex)-Data{3}{1}.rank(DecIndex),Data{2}{1}.rank(DecIndex)-Data{4}{1}.rank(DecIndex),'b.','markersize',3)
-        set(gca,'xlim',[-50,50])
-        set(gca,'ylim',[-50,50])
-        ylabel('rank(HL2)-rank(BL2)')
-        xlabel('rank(HL1)-rank(BL1)')
-        title('reproducibility of rank difference')
-
-        subplot(2,2,2)
-        plot(ZVar(:,1),ZVar(:,2),'k.','markersize',3)
-        hold on
-        plot(ZVar(IncIndex,1),ZVar(IncIndex,2),'r.','markersize',3)
-        plot(ZVar(DecIndex,1),ZVar(DecIndex,2),'b.','markersize',3)
-        for i=1:7
-            plot(ZVar(P.inczeroindex(P.test(i)),1),ZVar(P.inczeroindex(P.test(i)),2),sprintf('%co',P.color(i)),'markersize',10)
-            plot(ZVar(P.deczeroindex(P.test(i)),1),ZVar(P.deczeroindex(P.test(i)),2),sprintf('%c+',P.color(i)),'markersize',10)
+    if ComparisonFlag==1
+        if CompNb(RoundL)>1
+            [ZVar(:,RoundL),Pv(:,RoundL),Ppv(:,RoundL)]=getppv(CurrZVar,CurrPv,single(P.ppv.val{CompNb(RoundL)}),single(P.ppv.cdf{CompNb(RoundL)}),DisplayFlag);
+        else
+            ZVar(:,RoundL)=CurrZVar;
+            Pv(:,RoundL)=CurrPv;
+            Ppv(:,RoundL)=CurrPv;
         end
-        xlabel('ZVar of HL1vsBL1 & HL2vsBL2')
-        ylabel('ZVar of HL2vsBL1 & HL1vsBL2')
-        set(gca,'xlim',[-50,50])
-        set(gca,'ylim',[-50,50])
-        title('reproducibility of normalized rank difference (seven corrected points are shown)')
+        if DisplayFlag==1 & RoundL==2
 
-        subplot(2,2,3)
-        plot(ZVar(:,1),log10(Pv(:,1)),'k.','markersize',3)
-        hold on
-        plot(ZVar(IncIndex,1),log10(Pv(IncIndex,1)),'r.','markersize',3)
-        plot(ZVar(DecIndex,1),log10(Pv(DecIndex,1)),'b.','markersize',3)
-        xlabel('ZVar')
-        ylabel('log10(Pv)')
-        set(gca,'xlim',[-50,50])
-        title('Pv(Ppv)=f(ZVar) is monotonous')
+            figure
+            IncIndex=ZVar(:,1)>0;
+            DecIndex=ZVar(:,1)<0;
+            subplot(2,2,1)
+            plot(Data{1}{1}.rank-Data{3}{1}.rank,Data{2}{1}.rank-Data{4}{1}.rank,'k.','markersize',3)
+            hold on
+            plot(Data{1}{1}.rank(IncIndex)-Data{3}{1}.rank(IncIndex),Data{2}{1}.rank(IncIndex)-Data{4}{1}.rank(IncIndex),'r.','markersize',3)
+            plot(Data{1}{1}.rank(DecIndex)-Data{3}{1}.rank(DecIndex),Data{2}{1}.rank(DecIndex)-Data{4}{1}.rank(DecIndex),'b.','markersize',3)
+            set(gca,'xlim',[-50,50])
+            set(gca,'ylim',[-50,50])
+            ylabel('rank(HL2)-rank(BL2)')
+            xlabel('rank(HL1)-rank(BL1)')
+            title('reproducibility of rank difference')
 
-        subplot(2,2,4)
-        plot(Data{1}{1}.rank-Data{3}{1}.rank,ZVar(:,1),'k.','markersize',3)
-        hold on
-        plot(Data{1}{1}.rank(IncIndex)-Data{3}{1}.rank(IncIndex),ZVar(IncIndex(:,1)),'r.','markersize',3)
-        plot(Data{1}{1}.rank(DecIndex)-Data{3}{1}.rank(DecIndex),ZVar(DecIndex(:,1)),'b.','markersize',3)
-        xlabel('rank(HL1)-rank(BL1)')
-        ylabel('ZVar of HL1vsBL1 & HL2vsBL2')
-        set(gca,'xlim',[-50,50])
-        set(gca,'ylim',[-50,50])
-        title('some low rank differences are reassigned (inc<=>dec)')
+            subplot(2,2,2)
+            plot(ZVar(:,1),ZVar(:,2),'k.','markersize',3)
+            hold on
+            plot(ZVar(IncIndex,1),ZVar(IncIndex,2),'r.','markersize',3)
+            plot(ZVar(DecIndex,1),ZVar(DecIndex,2),'b.','markersize',3)
+            for i=1:7
+                plot(ZVar(P.inczeroindex(P.test(i)),1),ZVar(P.inczeroindex(P.test(i)),2),sprintf('%co',P.color(i)),'markersize',10)
+                plot(ZVar(P.deczeroindex(P.test(i)),1),ZVar(P.deczeroindex(P.test(i)),2),sprintf('%c+',P.color(i)),'markersize',10)
+            end
+            xlabel('ZVar of HL1vsBL1 & HL2vsBL2')
+            ylabel('ZVar of HL2vsBL1 & HL1vsBL2')
+            set(gca,'xlim',[-50,50])
+            set(gca,'ylim',[-50,50])
+            title('reproducibility of normalized rank difference (seven corrected points are shown)')
 
-    end
+            subplot(2,2,3)
+            plot(ZVar(:,1),log10(Pv(:,1)),'k.','markersize',3)
+            hold on
+            plot(ZVar(IncIndex,1),log10(Pv(IncIndex,1)),'r.','markersize',3)
+            plot(ZVar(DecIndex,1),log10(Pv(DecIndex,1)),'b.','markersize',3)
+            xlabel('ZVar')
+            ylabel('log10(Pv)')
+            set(gca,'xlim',[-50,50])
+            title('Pv(Ppv)=f(ZVar) is monotonous')
+
+            subplot(2,2,4)
+            plot(Data{1}{1}.rank-Data{3}{1}.rank,ZVar(:,1),'k.','markersize',3)
+            hold on
+            plot(Data{1}{1}.rank(IncIndex)-Data{3}{1}.rank(IncIndex),ZVar(IncIndex(:,1)),'r.','markersize',3)
+            plot(Data{1}{1}.rank(DecIndex)-Data{3}{1}.rank(DecIndex),ZVar(DecIndex(:,1)),'b.','markersize',3)
+            xlabel('rank(HL1)-rank(BL1)')
+            ylabel('ZVar of HL1vsBL1 & HL2vsBL2')
+            set(gca,'xlim',[-50,50])
+            set(gca,'ylim',[-50,50])
+            title('some low rank differences are reassigned (inc<=>dec)')
+
+        end % of if DisplayFlag==1 & RoundL==2
+    end %of if ComparisonFlag==1
 end %of RoundL
-%normally each round has the same number of comparisons
-%take the mean over all rounds in case it is not true
-MeanCompNb=round(mean(CompNb));
-[ZVar,Pv,Ppv,Fdr,Sensitivity]=result(ZVar,Pv,Ppv,MeanCompNb,DisplayFlag);
+if ComparisonFlag==1
+    %normally each round has the same number of comparisons
+    %take the mean over all rounds in case it is not true
+    MeanCompNb=round(mean(CompNb));
+    [ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=result(ZVar,Pv,Ppv,MeanCompNb,DisplayFlag);
+end
 %% FUNCTION getdata
 
 %INPUT PARAMETERS
@@ -628,6 +673,25 @@ global P
 
 CompNb=size(ZVar,2);
 
+%Unique values for ZVar and Pv are derived
+InterpZVar=abs(ZVar(:));
+InterpPv=abs(Pv(:));
+[InterpPv,SortOrder]=sort(InterpPv);
+InterpZVar=InterpZVar(SortOrder);
+InterpZVar=make_monotonous(InterpZVar,'dec');
+%Reconstruct a complete set of values (Inc and Dec)
+InterpPv=[-InterpPv;InterpPv];
+InterpZVar=[-InterpZVar;InterpZVar];
+[InterpZVar,Index]=unique(InterpZVar);
+InterpPv=InterpPv(Index);
+%InterpPpv is the product of ppv in case of perfect reproducibility (i.e. with Zvar identical in all the comparisons)
+% => InterpPpv=Pv^CompNb
+%in order to make below an estimate of Ppv by interpolation of ZVar 
+InterpPpv=InterpPv.^CompNb;
+[InterpZVar,Index]=unique(InterpZVar);
+InterpPpv=InterpPpv(Index);
+
+
 %:::::::::::::::::::::::::::::::::::::::::::::::::::::
 % CALCULATE THE MEAN OF ZVAR AND THE PRODUCT OF PPV
 %:::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -637,9 +701,10 @@ CompNb=size(ZVar,2);
 % => BestPpv=Pv^CompNb
 if DisplayFlag==1
     figure
-    plot(ZVar(:,1),log10(Pv(:,1).^2),'y+','markersize',3)
     hold on
-    plot(ZVar(:,2),log10(Pv(:,2).^2),'k.','markersize',3)
+    for CompL=1:min(CompNb,length(P.color))
+    plot(ZVar(:,CompL),log10(Pv(:,CompL).^2),sprintf('%c.',P.color(CompL)),'markersize',3)
+    end    
 end
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -648,31 +713,26 @@ end
 [ZVar,Pv]=adjust(ZVar,Pv);
 %after adjust Pv=abs(Pv)
 
-%Unique values for ZVar and BestPpv are derived
-%in order to make an interpolation of ppv below
-[InterpZVar,Index,Temp]=unique([ZVar(:,1);ZVar(:,2)]);
-InterpPv=[Pv(:,1);Pv(:,2)];
-InterpPpv=InterpPv(Index).^CompNb;
-
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % construct product of p-values => ppv and  calculate the corresponding p-values
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ZVar=mean(ZVar,2);
-
+ProdPv=prod(Pv,2);
 IncBindex=ZVar>0;
 DecBindex=ZVar<0;
-%make monotonous the function ppv=f(ZVar)
-%interpolate ZVar on the curve BestPpv=f(ZVar) which corresponds to the maximum of reproducibility
-%in order to get an estimate of ppv
+%make monotonous the function Ppv=f(ZVar) by interpolating
+%Zvar on the curve InterpPpv=f(ZVar) (ZVar corresponds to the maximum
+%of reproducibility) in order to get an estimate of Ppv
 Ppv=interp1(InterpZVar,InterpPpv,ZVar);
+
 if DisplayFlag==1
     %the real product of ppv
-    plot(ZVar,log10(prod(Pv,2)),'g.','markersize',3)
+    plot(ZVar,log10(ProdPv),'g.','markersize',3)
     hold on
     %the (ZVar,ppv) of points that have been corrected
-    plot(ZVar(P.inczeroindex),log10(Ppv(P.inczeroindex)),'r+','markersize',3)
-    plot(ZVar(P.deczeroindex),log10(Ppv(P.deczeroindex)),'b+','markersize',3)
+    plot(ZVar(P.inczeroindex),log10(ProdPv(P.inczeroindex)),'r+','markersize',3)
+    plot(ZVar(P.deczeroindex),log10(ProdPv(P.deczeroindex)),'b+','markersize',3)
     %the seven sampled point with their (ZVar,ppv) before and after correction
     for i=1:7
         plot(P.zvartest(i,1),log10(P.ppvtest(i,1)),sprintf('%co',P.color(i)))
@@ -697,13 +757,9 @@ for TrendL=1:2
     else
         CurrPpv=Ppv(DecBindex);
     end
-    %force to have a monotonous fonction Ppv=f(ZVar);
-
     %force CurrPpv to be of inside the range of interpolated ppv values
     CurrPpv(CurrPpv<=MinPpv)=MinPpv;
     CurrPpv(CurrPpv>MaxPpv)=MaxPpv;
-    %     [SortedPpv DirectSort]=sort(CurrPpv);
-    %     [Temp ReverseSort]=sort(DirectSort);
     CurrPv=interp1(HoPpv,HoPpvCdf,CurrPpv);
     if TrendL==1
         Pv(IncBindex)=CurrPv;
@@ -715,104 +771,112 @@ end
 
 
 %% FUNCTION result
-function [ZVar,Pv,Ppv,Fdr,Sensitivity]=result(ZVar,Pv,Ppv,CompNb,DisplayFlag)
+function [ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=result(ZVar,Pv,Ppv,CompNb,DisplayFlag)
 global P
 Fdr=ones(size(Pv,1),1);
 Sensitivity=ones(size(Pv,1),1);
 RoundNb=size(ZVar,2);
+
+%Unique values for ZVar and Ppv are derived
+%in order to make an interpolation of ppv below
+[InterpPpv,Index,Temp]=unique(Ppv(:));
+InterpZVar=ZVar(:);
+InterpZVar=InterpZVar(Index);
+[InterpZVar,Index,Temp]=unique(InterpZVar);
+InterpPpv=InterpPpv(Index);
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% combine the different p-values to determine the true direction of variation
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if RoundNb>1
-    %Unique values for ZVar and Ppv are derived
-    %in order to make an interpolation of ppv below
-    [InterpPpv,Index,Temp]=unique([Ppv(:,1);Ppv(:,2)]);
-    InterpZVar=[ZVar(:,1);ZVar(:,2)];
-    InterpZVar=InterpZVar(Index);
-    [InterpZVar,Index,Temp]=unique(InterpZVar);
-    InterpPpv=InterpPpv(Index);
-
-    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    % combine the different p-values to determine the true direction of variation
-    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [ZVar,Pv]=adjust(ZVar,Pv);
-    %Pv = abs(Pv)
-    %takes ZVar as the best statistics
-    ZVar=mean(ZVar,2);
-    %and don't use the calculated ppv
-    MeanPpv=mean(Ppv,2);
-    %but the interpolated one instead
-    ZVar(ZVar<min(InterpZVar))=min(InterpZVar);
-    ZVar(ZVar>max(InterpZVar))=max(InterpZVar);
-    Ppv=interp1(InterpZVar,InterpPpv,ZVar);        
-    %don't use the mean of pv(ppv)
-    MeanPv=mean(Pv,2);
-    %but the interpolated pv instead
-    Ppv(Ppv<min(single(P.ppv.val{CompNb})))=min(single(P.ppv.val{CompNb}));
-    Ppv(Ppv>max(single(P.ppv.val{CompNb})))=max(single(P.ppv.val{CompNb}));
-    Pv=interp1(single(P.ppv.val{CompNb}),single(P.ppv.cdf{CompNb}),Ppv);
+end
+%Pv = abs(Pv)
+%takes ZVar as the best statistics
+ZVar=mean(ZVar,2);
+%and don't use the calculated ppv
+MeanPpv=mean(Ppv,2);
+%but the interpolated one instead
+ZVar(ZVar<min(InterpZVar))=min(InterpZVar);
+ZVar(ZVar>max(InterpZVar))=max(InterpZVar);
+Ppv=interp1(InterpZVar,InterpPpv,ZVar);
+%don't use the mean of pv(ppv)
+MeanPv=mean(Pv,2);
+%but the interpolated pv instead
+CurrPpv=Ppv;
+CurrPpv(Ppv<min(single(P.ppv.val{CompNb})))=min(single(P.ppv.val{CompNb}));
+CurrPpv(Ppv>max(single(P.ppv.val{CompNb})))=max(single(P.ppv.val{CompNb}));
+Pv=interp1(single(P.ppv.val{CompNb}),single(P.ppv.cdf{CompNb}),CurrPpv);
 
-    IncBindex=ZVar>0;
-    DecBindex=ZVar<0;
-    
-    if DisplayFlag==1
-        figure
-        subplot(1,2,1)
-        plot(ZVar,log10(MeanPpv),'b+')
-        hold on
-        plot(ZVar,log10(Ppv),'g.')
-        xlabel('final ZVar')
-        ylabel('final product of p-values (ppv)')
-        title('correction of product of p-values (blue (green) before (after) correction)')
-        subplot(1,2,2)
-        plot(ZVar,log10(MeanPv),'b+')
-        hold on
-        plot(ZVar,log10(abs(Pv)),'g.');
-        xlabel('final ZVar')
-        ylabel('final p-value of ppv')
-        title('correction of p-values (blue (green) before (after) correction)')
-    end
-    %forces to display Fdr, Sensitivity curves
-    DisplayFlag=1;
-    for TrendL=1:2
-        if TrendL==1
-            CurrBindex=IncBindex;
-            if DisplayFlag==1
-                h=figure;
-            else
-                h=0;
-            end
-            CurrColor='r';
-            Title='INCREASED';
-            SubPos=1;
-            Sign=1;
+IncBindex=ZVar>0;
+DecBindex=ZVar<0;
+
+if DisplayFlag==1
+    figure
+    subplot(1,2,1)
+    plot(ZVar,log10(MeanPpv),'b+')
+    hold on
+    plot(ZVar,log10(Ppv),'g.')
+    xlabel('final ZVar')
+    ylabel('final product of p-values (ppv)')
+    title('correction of product of p-values (blue (green) before (after) correction)')
+    subplot(1,2,2)
+    plot(ZVar,log10(abs(MeanPv)),'b+')
+    hold on
+    plot(ZVar,log10(abs(Pv)),'g.');
+    line([0,0],[0,1],'color','k')
+    xlabel('final ZVar')
+    ylabel('final p-value of ppv')
+    title('correction of p-values (blue (green) before (after) correction)')
+end
+%forces to display Fdr, Sensitivity curves
+DisplayFlag=1;
+TotalVar=zeros(1,2);
+for TrendL=1:2
+    if TrendL==1
+        CurrBindex=IncBindex;
+        if DisplayFlag==1
+            h=figure;
         else
-            CurrBindex=DecBindex;
-            CurrColor='b';
-            Title='DECREASED';
-            SubPos=2;
-            Sign=-1;
+            h=0;
         end
-        CurrPpv=Ppv(CurrBindex);        
-        CurrPv=Pv(CurrBindex);            
-
-        DataNb=length(CurrPpv);
-        [SortedPpv DirectSort]=sort(CurrPpv);
-        SortedPv=CurrPv(DirectSort);
-        [Temp ReverseSort]=sort(DirectSort); 
-        
-        [Temp,PpvCdf,Temp,Temp,Temp,Temp]=cumul_distribution(CurrPpv,0,0,0);
-                                       
-        [CurrFdr,CurrFnr,CurrSensitivity,CurrSpecificity,TruePosNb,Max_useful_FPR]= fdr(DataNb,SortedPv,PpvCdf,DisplayFlag,h,CurrColor,Title,SortedPpv,SubPos);        
-        CurrFdr=CurrFdr(ReverseSort);
-        Fdr(CurrBindex)=CurrFdr*Sign;
-        CurrSensitivity=CurrSensitivity(ReverseSort);
-        Sensitivity(CurrBindex)=CurrSensitivity*Sign;
-        Pv(CurrBindex)=Pv(CurrBindex)*Sign;
-        Ppv(CurrBindex)=Ppv(CurrBindex)*Sign;
+        CurrColor='r';
+        Title='INCREASED';
+        SubPos=1;
+        Sign=1;
+    else
+        CurrBindex=DecBindex;
+        CurrColor='b';
+        Title='DECREASED';
+        SubPos=2;
+        Sign=-1;
     end
+    CurrPpv=Ppv(CurrBindex);
+    CurrPv=Pv(CurrBindex);
+    CurrZVar=ZVar(CurrBindex);
+
+    [SortedPpv DirectSort]=sort(CurrPpv);
+    SortedPv=CurrPv(DirectSort);
+    [Temp ReverseSort]=sort(DirectSort);
+    SortedZVar=CurrZVar(DirectSort);
+    
+
+    [Temp,PpvCdf,Temp,Temp,Temp,Temp]=cumul_distribution(CurrPpv,0,0,0);
+
+    [CurrFdr,CurrSensitivity,TruePosNb]= fdr(abs(SortedZVar),SortedPpv,abs(SortedPv),PpvCdf,DisplayFlag,h,CurrColor,Title,SubPos);
+    CurrFdr=CurrFdr(ReverseSort);
+    Fdr(CurrBindex)=CurrFdr*Sign;
+    CurrSensitivity=CurrSensitivity(ReverseSort);
+    Sensitivity(CurrBindex)=CurrSensitivity*Sign;
+    Pv(CurrBindex)=Pv(CurrBindex)*Sign;
+    Ppv(CurrBindex)=Ppv(CurrBindex)*Sign;
+    TotalVar(TrendL)=TruePosNb;
 end
 
 %% FUNCTION adjust
 function [ZVar,Pv]=adjust(ZVar,Pv)
 global P
+
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % determine the main variation trend by using mean of log(p-values)
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -857,6 +921,9 @@ for CompL=1:CompNb
     ZVar(InvBindex,CompL)=0;
     Pv(InvBindex,CompL)=1;
 end
+
+
+
 P.inczeroindex=find(IncZeroBindex);
 P.deczeroindex=find(DecZeroBindex);
 %Select seven values to be displayed among the changed positions
