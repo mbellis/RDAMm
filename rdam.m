@@ -3,11 +3,11 @@
 %&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 % Find which variations are statistically significative when comparing two groups
-%   points, each point being a series of rank values. One group is called the test group (TG)
+%   of points, each point being a series of rank values. One group is called the test group (TG)
 %   and the other is called the control group (CG). The comparison is TG vs CG.  Increased (devreased) probesets are those
-%   which are higher (lower) in the highline.
+%   which are higher (lower) in the test group.
 % A group which contains several points is not 'reduced' to a one-point group by using e.g. the mean of all the points.
-%    Therefore, there exist multiple way for doing the comparison.
+%    Therefore, there exist multiple way for doing the comparison between two groups which have variable number of replicates.
 %    For exemple if two points are available in each condition (TG1,TG2 in the TG group and CG1,CG2 in the CG group,
 %    we can do either a 'parallel' comparison (that is a unique one-to-one comparison as with paired sample
 %    that uses only TG1vsCG1 and TG2vsCG2). In this case one set of two comparisons is made. In each comparison a p-value is
@@ -21,19 +21,24 @@
 %   {[1,2;1,2]} indicates that the first set of comparisons is TG1vsCG1 and TG2vsCG2
 %   {[1,2;1,2],[1,2;2,1]} indicates that the first set of comparisons is TG1 v sCG1 and TG2vsCG2 and the
 %   second set of comparisons is TG1vsCG2 and TG2vsCG1
-% For each comparison a calibration set (which allows two things: first it is a way of normalizing the variation (Var => zVar,
-%    e.g. Rank Difference (RD) => normalized RD (zRD), either by the standardization procedure (orignal method of RDAM), or by a more sophisticated
-%    algorithm (surface mapping), and secondly it gives the p-value for any zVar value (PvCurve) must be used (calulated by the noise_distribution script).
+% For each comparison
+%    a calibration set
+%    (which allows two things:
+%       first it is a way of normalizing the variation (Var => zVar,
+%           e.g. Rank Difference (RD) => normalized RD (zRD), either by the standardization procedure (orignal method of RDAM), or by a more sophisticated
+%           algorithm (surface mapping),
+%       and secondly it gives the p-value for any zVar value (PvCurve))
+%    must be used (calculated by the noise_distribution script).
 
 %INPUT PARAMETERS
-% ChipRank indicates the rank of the chip used (e.g. HG U74 has four chips A,B,C,D)
-% CompScheme : The comparisons to be made
-% TGRankList and CGRankList: liste of data ranks used in the comparisons
+%1- ChipRank indicates the rank of the chip used (e.g. HG U74 has four chips A,B,C,D)
+%2- CompScheme : The comparisons to be made
+%3- TGRankList and CGRankList: list of data ranks used in the comparisons
 %   if TGRankList=[12,15,23], and ChipRank = 1, the Data used for TG point in position 1 is Data{12}{1}.rank
-% LoadDataFlag = 1 indicates that each data point must be loaded when to be used (no permanent storage of Data in the memory)
-% RankThreshold: a vector of two values allowing to start the process of constructing quantile curves using
+%4&5- LoadDataFlag = 1 indicates that each data point must be loaded when to be used (no permanent storage of Data in the memory)
+%6- RankThreshold: a vector of two values allowing to start the process of constructing quantile curves using
 %   a defined range of rank values (>=RankThreshold(1)&<=RankThreshold(2))
-% CalibType indicates the type of couple of two replicates used to calculate the calibration set for the current comparison.
+%7- CalibType indicates the type of couple of two replicates used to calculate the calibration set for the current comparison.
 %   The couple noted {G1,G2}, which is passed as parameter, indicates the
 %   G1 and G2 will be identified to the HL and BL lines, respectively, in the noise_distribution function.
 %   If (TG1,TG2) and (CG1,CG2) are the two couples of replicates for the the TG and CG condition, respectively, we have three possibilities:
@@ -41,20 +46,19 @@
 %   CalibType='up' =>  {TG1,CG1} or {TG2,CG2} is used,
 %   CalibType='down' => {CG1,TG1} or {CG2,TG2} is used.
 %   A rule allows to choose the right couple from the two existing ones (FirstCouple, SndCouple).
-% ClearIndex: allow to clear some points from the points used in the calibration process(e.g. probe sets that are 
+%8- ClearIndex: allows to clear some points from the points used in the calibration process(e.g. probe sets that are 
 %   linked to gender can'b eliminated from calibration process in case where points used as replicates in the
 %   calibration process belong to different gender)
-% NormType: either 'standardization' (original method in RDAM = var - mean /std)
+%9- NormType: either 'standardization' (original method in RDAM = var - mean /std)
 %   or 'quantile' (more general method based on percentile curves)
-% AnalyseType : either 'transcriptome' or 'chipchip' (some parameters have to be adapted to the type of analysis)
-% SizerFittingDegrees: used by sizer (the procedure of curve smoothing).Indicates the number of increasing fitting degrees used
-% SingleCalibPointFlag = 1 indicates that the same TG (CG) point is used to construct the pairs of TG (CG) points that are
+%10- AnalyseType : either 'transcriptome' or 'chipchip' (some parameters have to be adapted to the type of analysis)
+%11- SizerFittingDegrees: used by sizer (the procedure of curve smoothing).Indicates the number of increasing fitting degrees used
+%12- SingleCalibPointFlag = 1 indicates that the same TG (CG) point is used to construct the pairs of TG (CG) points that are
 %   considered as replicates in the calibration process (noise_distribution script)
-% ClearCalibFlag = 1 indicates that some rank values are not used 
-% SingleCalibCurveFlag = 1 indicates that a single calibration set is used for all the comparisons
-% SaveFlag: indicates if the output must be saved or not
-% DisplayFlag: indicates if figures must be drawn or not
-% ComparisonFlag: indicates if the comparison must be done (if not the function is simply used to construct calibration sets which are stored in S.calib)
+%13- SingleCalibCurveFlag = 1 indicates that a single calibration set is used for all the comparisons
+%14-  SaveFlag: indicates if the output must be saved or not
+%15- DisplayFlag: indicates if figures must be drawn or not
+%16- ComparisonFlag: indicates if the comparison must be done (if not the function is simply used to construct calibration sets which are stored in S.calib)
 
 %VARARGIN PARAMETERS
 % if SingleCalibPointFlag==1, HLCalibRank = varargin{1} & CGCalibRank = varargin{2} indicates the ranks of points that are
@@ -82,8 +86,8 @@ global Data K P S
 
 %% Verifications
 if SingleCalibPointFlag==1
-    if nargin~=x
-        h=errordlg('must have at least x paramters');
+    if nargin~=18
+        h=errordlg('must have 18 paramters');
         waitfor(h)
     else
         HLCalibRank=varargin{1};
@@ -99,18 +103,21 @@ if SingleCalibPointFlag==1
             end
         end
     end
-end
-CoupleRanks=zeros(2,2);
-if SingleCalibCurveFlag==1
-    if nargin~=x
-        h=errordlg('must have at least x parameters');
+elseif SingleCalibCurveFlag==1
+    if nargin~=20
+        h=errordlg('must have 20 parameters');
         waitfor(h)
     else
         CoupleRank(1,2)=varargin{3};
         CoupleRank(1,1)=varargin{4};
     end
+else
+     if nargin~=16
+        h=errordlg('must have 16 parameters');
+        waitfor(h)
+     end
 end
-
+CoupleRanks=zeros(2,2);
 
 %% Set up LoopNb & CompNb
 % For each comparison set the program starts a new run
@@ -381,19 +388,18 @@ for LoopL=1:LoopNb
                         eval(sprintf('save %s S',P.file.stat))
                     end
                 end
-            end
-            
+            end            
             if ComparisonFlag==1
             % select the right calibration set (those which correspond to the pair of replicates having
             % the highest dispersion  (less reproducible pair in order not to overestimate the p-values)            
                 if S.calib.stestsurf(CoupleRanks(1,2),CoupleRanks(1,1))<S.calib.stestsurf(CoupleRanks(2,2),CoupleRanks(2,1))
-                    Pv=rdam(NormType,Calib.Type,HLRanks(1),BLRanks(1),CoupleRanks(2,2),CoupleRanks(2,1));
+                    CompPv=getpv(NormType,Calib.Type,HLRanks(1),BLRanks(1),CoupleRanks(2,2),CoupleRanks(2,1));
                 else
-                    Pv=rdam(NormType,Calib.Type,HLRanks(1),BLRanks(1),CoupleRanks(1,2),CoupleRanks(1,1));
+                    CompPv=getpv(NormType,Calib.Type,HLRanks(1),BLRanks(1),CoupleRanks(1,2),CoupleRanks(1,1));
                 end
             end
         else %exist a single calibration set used for all comparisons
-            Pv=rdam(HLRanks(1),BLRanks(1),CoupleRanks(1,2),CoupleRanks(1,1));
+            CompPv=getpv(HLRanks(1),BLRanks(1),CoupleRanks(1,2),CoupleRanks(1,1));
         end
     end %of Comp l
 end %of LoopL

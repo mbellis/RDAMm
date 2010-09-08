@@ -606,11 +606,11 @@ if ~isempty(CurrPercPos)
 else
     h=warndlg('No linear fitting of end of curves. Curves could cross each other !');
     waitfor(h)
-    CompositFittedMean=[Grid.mean(1:PercPos1-1,4);Grid.mean(PercPos1:end,3)];
-    CompositFittedStd=[Grid.std(1:PercPos1-1,4);Grid.std(PercPos1:end,3)];
+    CompositFittedMean=[Grid.mean(1:PercPos(1)-1,4);Grid.mean(PercPos(1):end,3)];
+    CompositFittedStd=[Grid.std(1:PercPos(1)-1,4);Grid.std(PercPos(1):end,3)];
     if isequal(CalibType,'quantile')
         for PercL=1:PercNb
-            CompositFittedPerc{PercL}=[Grid.perc{PercL}(1:PercPos1-1,4);Grid.perc{PercL}(PercPos1:end,3)];
+            CompositFittedPerc{PercL}=[Grid.perc{PercL}(1:PercPos(1)-1,4);Grid.perc{PercL}(PercPos(1):end,3)];
         end
     end
 end
