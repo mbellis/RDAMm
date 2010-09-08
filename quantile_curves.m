@@ -12,7 +12,7 @@
 %The ranges are determined by a sliding window of size WinSize, shifted by steps equal to WinStep.
 %The current X position corresponds to a rank. The first occurence of this rank
 %is the current position.
-%The positive variations values used for calculating the fractiles are put in the range of positions going from the 
+%The positive variations values used for calculating the fractiles are put in the range of positions going from the
 %position used in the previous step (the value of which is stored in MemAllPosition) to the actual current position.
 %The window size is constant but the process act on a selection of point (corresponding to positive variations),
 %so in the final result a window is represented by rank intervals of different length
@@ -39,7 +39,7 @@
 
 %OutputRes structure :
 %OutputRes.rank : rank of the X values
-%OutputRes.perc : series of raw percentiles curves in the sliding window
+%OutputRes.perc : series of raw percentile curves in the sliding window
 %OutputRes.fitperc : series of smoothed percentiles curves (SIZER)
 %OutputRes.mean :  mean of the variation in the sliding window
 %OutputRes.fitmean : smoothed mean (SIZER)
@@ -55,13 +55,19 @@
 %F : filtered (selected with SelIndex)
 %S : sorted
 
-function [OutputRes,Rank,Var,RankGrid,Grid]=quantile_curves (Rank,Var,AnalyseType,SelIndex,RankThreshold,WinStep,WinSize,PercRange,SizerFittingDegree,DisplayFlag)
+%VERSIONS
+%V01 6-10-2009 refactoring of the current version
+%V02 3-12-2009 complete the management of CalibType: if CalibType=='standardization', raw percentile curves are not calculated
+
+function [OutputRes,Rank,Var,RankGrid,Grid]=quantile_curves (Rank,Var,CalibType,AnalyseType,SelIndex,RankThreshold,WinStep,WinSize,PercRange,SizerFittingDegree,DisplayFlag)                                
 PercNb=length(PercRange);
 RankNb=length(Rank);
 
 %initialise OutputRes
 OutputRes.rank=Rank;
-OutputRes.perc=zeros(RankNb,12);
+if isequal(CalibType,'quantile')
+    OutputRes.perc=zeros(RankNb,12);
+end
 OutputRes.mean=zeros(RankNb,1);
 OutputRes.std=zeros(RankNb,1);
 OutputRes.fraction=zeros(RankNb,1);
@@ -101,19 +107,22 @@ MemMean=CurrMean;
 MemStd=CurrStd;
 MemFraction=Fraction;
 
-%sort CurrVar to find percentiles
-CurrVar=sort(CurrVar);
-%find the percentiles corresponding to the range passed in paramater (PercRange)
-MemPerc=zeros(1,PercNb);
-for PercL=1:PercNb
-    MemPerc(PercL)=CurrVar(floor(length(CurrVar)*(PercRange(PercL))));
-end
+if isequal(CalibType,'quantile')
+    %sort CurrVar to find percentiles
+    CurrVar=sort(CurrVar);
+    %find the percentiles corresponding to the range passed in paramater (PercRange)
+    MemPerc=zeros(1,PercNb);
+    for PercL=1:PercNb
+        MemPerc(PercL)=CurrVar(floor(length(CurrVar)*(PercRange(PercL))));
+    end
 
-%all the first PosNb places are filled in this round
-%but in the next round new values will replace them
-%from MemPosRankPos
-for PercL=1:PercNb
-    OutputRes.perc(1:PosNb,PercL)=MemPerc(PercL);
+
+    %all the first PosNb places are filled in this round
+    %but in the next round new values will replace them
+    %from MemPosRankPos
+    for PercL=1:PercNb
+        OutputRes.perc(1:PosNb,PercL)=MemPerc(PercL);
+    end
 end
 OutputRes.mean(1:PosNb)=CurrMean;
 OutputRes.std(1:PosNb)=CurrStd;
@@ -182,10 +191,12 @@ for BinL=1:BinNb
         CurrMean=mean(CurrVar);
         CurrStd=std(CurrVar);
         CurrVar =sort(CurrVar);
-        Percentile=zeros(1,PercNb);
-        for PercL=1:PercNb
-            %Percentile(PercL)=CurrVar(ceil(size(CurrVar,1)*(PercRange(PercL))));
-            Percentile(PercL)=CurrVar(floor(size(CurrVar,1)*(PercRange(PercL))));
+        if isequal(CalibType,'quantile')
+            Percentile=zeros(1,PercNb);
+            for PercL=1:PercNb
+                %Percentile(PercL)=CurrVar(ceil(size(CurrVar,1)*(PercRange(PercL))));
+                Percentile(PercL)=CurrVar(floor(size(CurrVar,1)*(PercRange(PercL))));
+            end
         end
         CurrentXPosition=find(OutputRes.rank==Rank(CurrPosition));
         CurrentXPosition=CurrentXPosition(1);
@@ -197,14 +208,16 @@ for BinL=1:BinNb
         PrevBloc=ones(PrevBlocSize,1);
         CurrBlocSize=CurrentXPosition-MemAllPosition-PrevBlocSize+1;
         CurrBloc=ones(CurrBlocSize,1);
-        for PercL=1:PercNb
-            % The forward bin equal to previously calculated value is
-            % known only at this step
-            OutputRes.perc(MemAllPosition:MemAllPosition+PrevBlocSize-1,PercL)=PrevBloc*MemPerc(PercL);
-            % The backward bin equal to the currently calculated value is
-            % filled out
-            OutputRes.perc(MemAllPosition+PrevBlocSize:CurrentXPosition,PercL)=CurrBloc*Percentile(PercL);
-            MemPerc(PercL)=Percentile(PercL);
+        if isequal(CalibType,'quantile')
+            for PercL=1:PercNb
+                % The forward bin equal to previously calculated value is
+                % known only at this step
+                OutputRes.perc(MemAllPosition:MemAllPosition+PrevBlocSize-1,PercL)=PrevBloc*MemPerc(PercL);
+                % The backward bin equal to the currently calculated value is
+                % filled out
+                OutputRes.perc(MemAllPosition+PrevBlocSize:CurrentXPosition,PercL)=CurrBloc*Percentile(PercL);
+                MemPerc(PercL)=Percentile(PercL);
+            end
         end
         OutputRes.mean(MemAllPosition:MemAllPosition+PrevBlocSize-1)=PrevBloc*MemMean;
         OutputRes.mean(MemAllPosition+PrevBlocSize:CurrentXPosition)=CurrBloc*CurrMean;
@@ -247,31 +260,35 @@ if Try(end)<=LastVar
 end
 OutputRes.std(MemAllPosition:end)=polyval(FitParameter,OutputRes.rank(MemAllPosition:end));
 
-LastVar=0;
-for PercL=1:PercNb
-    FitParameter=polyfit(OutputRes.rank(MemAllPosition-1-WinSize:MemAllPosition-1),...
-        OutputRes.perc(MemAllPosition-1-WinSize:MemAllPosition-1,PercL),1);
-    Try=polyval(FitParameter,OutputRes.rank(MemAllPosition:end));
-    if Try(end)<=LastVar
-        FitParameter=polyfit([OutputRes.rank(MemAllPosition-1),OutputRes.rank(end)],...
-            [OutputRes.perc(MemAllPosition-1,PercL),LastVar+eps],1);
+if isequal(CalibType,'quantile')
+    LastVar=0;
+    for PercL=1:PercNb
+        FitParameter=polyfit(OutputRes.rank(MemAllPosition-1-WinSize:MemAllPosition-1),...
+            OutputRes.perc(MemAllPosition-1-WinSize:MemAllPosition-1,PercL),1);
+        Try=polyval(FitParameter,OutputRes.rank(MemAllPosition:end));
+        if Try(end)<=LastVar
+            FitParameter=polyfit([OutputRes.rank(MemAllPosition-1),OutputRes.rank(end)],...
+                [OutputRes.perc(MemAllPosition-1,PercL),LastVar+eps],1);
+        end
+        OutputRes.perc(MemAllPosition:end,PercL)=polyval(FitParameter,OutputRes.rank(MemAllPosition:end));
+        LastVar=OutputRes.perc(end,PercL);
     end
-    OutputRes.perc(MemAllPosition:end,PercL)=polyval(FitParameter,OutputRes.rank(MemAllPosition:end));
-    LastVar=OutputRes.perc(end,PercL);
 end
 
 
 if DisplayFlag==1
-    Colors='bgmkcrbgmkcrb';
-    h1=figure;
-    subplot(2,2,1)
-    hold on
-    for PercL=1:PercNb
-        plot(0:100/(length(OutputRes.perc(:,PercL))-1):100,OutputRes.perc(:,PercL),Colors(PercL))
+    if isequal(CalibType,'quantile')
+        Colors='bgmkcrbgmkcrb';
+        h1=figure;
+        subplot(2,2,1)
+        hold on
+        for PercL=1:PercNb
+            plot(0:100/(length(OutputRes.perc(:,PercL))-1):100,OutputRes.perc(:,PercL),Colors(PercL))
+        end
+        title('raw percentile curves')
+        xlabel('rank')
+        ylabel('percentile of variations')
     end
-    title('raw percentile curves')
-    xlabel('rank')
-    ylabel('percentile of variations')
 
     h2=figure;
     subplot(2,2,1)
@@ -308,22 +325,26 @@ OutputRes.stepvar(SelIndex)=(Var-OutputRes.mean(SelIndex))./OutputRes.std(SelInd
 
 [RankGrid,Grid.mean]=gpanal_calib([OutputRes.rank(SelIndex),OutputRes.mean(SelIndex)],[0.25,100,400],SizerFittingDegree);
 [RankGrid,Grid.std]=gpanal_calib([OutputRes.rank(SelIndex),OutputRes.std(SelIndex)],[0.25,100,400],SizerFittingDegree);
-for PercL=1:PercNb
-    [RankGrid,Grid.perc{PercL}]=gpanal_calib([OutputRes.rank(SelIndex),OutputRes.perc(SelIndex,PercL)],[0.25,100,400],SizerFittingDegree);
+if isequal(CalibType,'quantile')
+    for PercL=1:PercNb
+        [RankGrid,Grid.perc{PercL}]=gpanal_calib([OutputRes.rank(SelIndex),OutputRes.perc(SelIndex,PercL)],[0.25,100,400],SizerFittingDegree);
+    end
 end
 
 %plot percentiles curves at two different degree of fitting
 if DisplayFlag==1
-    figure(h1)
-    subplot(2,2,2)
-    hold on
-    for PercL=1:PercNb
-        plot(RankGrid,Grid.perc{PercL}(:,3),[Colors(PercL),':'])
-        plot(RankGrid,Grid.perc{PercL}(:,4),[Colors(PercL),'-'])
+    if isequal(CalibType,'quantile')
+        figure(h1)
+        subplot(2,2,2)
+        hold on
+        for PercL=1:PercNb
+            plot(RankGrid,Grid.perc{PercL}(:,3),[Colors(PercL),':'])
+            plot(RankGrid,Grid.perc{PercL}(:,4),[Colors(PercL),'-'])
+        end
+        title('smoothed percentile curves (3(..)&4(-))')
+        xlabel('rank')
+        ylabel('percentile of variations')
     end
-    title('smoothed percentile curves (3(..)&4(-))')
-    xlabel('rank')
-    ylabel('percentile of variations')
 
     figure(h2);
     subplot(2,2,2)
@@ -351,7 +372,9 @@ if ~isempty(CurrPercPos)
 end
 %values of precision used for each segment
 Sizer=[];
-CompositFittedPerc=cell(PercNb,1);
+if isequal(CalibType,'quantile')
+    CompositFittedPerc=cell(PercNb,1);
+end
 if ~isempty(CurrPercPos)
     Sizer(1)=4;
     Sizer(2)=3;
@@ -376,151 +399,154 @@ if ~isempty(CurrPercPos)
     Flip_value=polyval(Linear_parameter,RankGrid(PercPos(2):end));
     CompositFittedStd=[CompositFittedStd;Flip_value];
 
-    if isequal(AnalyseType,'chipchip')
-        Sizer(1)=2;
-        Sizer(2)=3;
-        %percentile curves to be corrected
-        PercLimit(1,1)=9;
-        PercLimit(1,2)=PercNb;
-        %percentile curves used as such
-        PercLimit(2,1)=1;
-        PercLimit(2,2)=8;
+    if isequal(CalibType,'quantile')
+        if isequal(AnalyseType,'chipchip')
+            Sizer(1)=2;
+            Sizer(2)=3;
+            %percentile curves to be corrected
+            PercLimit(1,1)=9;
+            PercLimit(1,2)=PercNb;
+            %percentile curves used as such
+            PercLimit(2,1)=1;
+            PercLimit(2,2)=8;
 
-    else
-        Sizer(1)=4;
-        Sizer(2)=0;
-        %percentile curves used as such
-        PercLimit(2,1)=1;
-        PercLimit(2,2)=PercNb;
-    end
-
-    %limit of segments that have to be fitted with different precision for mean and std curves
-    % for percentile curves
-    PercRank(1)=15;
-    CurrPercPos=find(RankGrid>=PercRank(1));
-    PercPos(1)=CurrPercPos(1);                    %
-    PercRank(2)=90;
-    CurrPercPos=find(RankGrid>=PercRank(2));
-    PercPos(2)=CurrPercPos(1);                    %
-
-    
-    if Sizer(2)~=0
-        %CHIPCHIP PROCESSING
-        %ad hoc corrections applied for the particular examples that I had to process (may be not a general solution)
-        %the limit of segments is set to the cross between two curves in the first 1=>15 range
-        %and last 90=>end range
-        %only percentile curves in range (PercLimit(1,:) are corrected
-        for PercL=PercLimit(1,1):PercLimit(1,2)
-            Pos=[];
-            Limit=[];
-            %correction of start
-            %detect the second cross between 3rd and 2nd sizer line
-            StartPerc1=Grid.perc{PercL}(1:PercPos(1),Sizer(1));
-            StartPerc2=Grid.perc{PercL}(1:PercPos(1),Sizer(2));
-            DiffStart=StartPerc2-StartPerc1;
-            Pos(1)=1;
-            while DiffStart(Pos(1))==0
-                Pos(1)=Pos(1)+1;
-            end
-            if DiffStart(Pos(1))<0
-                Sign=1;
-            else
-                Sign=-1;
-            end
-            Continue=1;
-            %search the first inversion
-            Limit(1)=0;
-            Limit(2)=0;
-            while Continue==1 & Pos(1)<length(DiffStart)
-                Pos(1)=Pos(1)+1;
-                if DiffStart(Pos(1))*Sign>0
-                    Limit(1)=Pos(1);
-                    %search the second inversion (pos=>neg)
-                    while Continue==1 & Pos(1)<PercPos(1)
-                        Pos(1)=Pos(1)+1;
-                        if DiffStart(Pos(1))*Sign<length(DiffStart)
-                            Limit(2)=Pos(1);
-                            Continue=0;
-                        end
-                    end
-                    Continue=0;
-                end
-            end
-            if Limit(2)>0
-                Pos(1)=Limit(2);
-            elseif Limit(1)>0
-                Pos(1)=Limit(1);
-            else
-                Pos(1)=1;
-            end
-
-            %correction of end
-            %detect the second cross between 1rd and 2nd sizer line
-            EndPerc1=Grid.perc{PercL}(PercPos(2):end,Sizer(1));
-            EndPerc2=Grid.perc{PercL}(PercPos(2):end,Sizer(2));
-            DiffEnd=EndPerc2-EndPerc1;
-            Pos(2)=length(DiffEnd);
-            while DiffEnd(Pos(2))==0
-                Pos(2)=Pos(2)-1;
-            end
-            if DiffEnd(Pos(2))>0
-                Sign=1;
-            else
-                Sign=-1;
-            end
-            Continue=1;
-            %search the first inversion
-            Limit(1)=0;
-            Limit(2)=0;
-            while Continue==1 & Pos(2)>1
-                Pos(2)=Pos(2)-1;
-                if DiffEnd(Pos(2))*Sign<0
-                    Limit(1)=Pos(1);
-                    %search the second inversion (pos=>neg)
-                    while Continue==1 & Pos(2)>1
-                        Pos(2)=Pos(2)-1;
-                        if DiffEnd(Pos(2))*Sign>0
-                            Limit(2)=Pos(1);
-                            Continue=0;
-                        end
-                    end
-                    Continue=0;
-                end
-            end
-
-            if Limit(2)>0
-                Pos(2)=Limit(2);
-            elseif Limit(1)>0
-                Pos(2)=Limit(1);
-            else
-                Pos(2)=length(DiffEnd)-1;
-            end
-            Pos(2)=length(Grid.perc{PercL}(:,2))-(length(DiffEnd)-Pos(2))+1;
-            CompositFittedPerc{PercL}=[Grid.perc{PercL}(1:Pos(1)-1,Sizer(1));Grid.perc{PercL}(Pos(1):Pos(2)-1,Sizer(2));Grid.perc{PercL}(Pos(2):end,Sizer(1))];
+        else
+            Sizer(1)=4;
+            Sizer(2)=0;
+            %percentile curves used as such
+            PercLimit(2,1)=1;
+            PercLimit(2,2)=PercNb;
         end
-    end
-    for PercL=PercLimit(2,1):PercLimit(2,2)
-        CompositFittedPerc{PercL}=Grid.perc{PercL}(:,Sizer(1));
+
+        %limit of segments that have to be fitted with different precision for mean and std curves
+        % for percentile curves
+        PercRank(1)=15;
+        CurrPercPos=find(RankGrid>=PercRank(1));
+        PercPos(1)=CurrPercPos(1);                    %
+        PercRank(2)=90;
+        CurrPercPos=find(RankGrid>=PercRank(2));
+        PercPos(2)=CurrPercPos(1);                    %
+
+
+        if Sizer(2)~=0
+            %CHIPCHIP PROCESSING
+            %ad hoc corrections applied for the particular examples that I had to process (may be not a general solution)
+            %the limit of segments is set to the cross between two curves in the first 1=>15 range
+            %and last 90=>end range
+            %only percentile curves in range (PercLimit(1,:) are corrected
+            for PercL=PercLimit(1,1):PercLimit(1,2)
+                Pos=[];
+                Limit=[];
+                %correction of start
+                %detect the second cross between 3rd and 2nd sizer line
+                StartPerc1=Grid.perc{PercL}(1:PercPos(1),Sizer(1));
+                StartPerc2=Grid.perc{PercL}(1:PercPos(1),Sizer(2));
+                DiffStart=StartPerc2-StartPerc1;
+                Pos(1)=1;
+                while DiffStart(Pos(1))==0
+                    Pos(1)=Pos(1)+1;
+                end
+                if DiffStart(Pos(1))<0
+                    Sign=1;
+                else
+                    Sign=-1;
+                end
+                Continue=1;
+                %search the first inversion
+                Limit(1)=0;
+                Limit(2)=0;
+                while Continue==1 & Pos(1)<length(DiffStart)
+                    Pos(1)=Pos(1)+1;
+                    if DiffStart(Pos(1))*Sign>0
+                        Limit(1)=Pos(1);
+                        %search the second inversion (pos=>neg)
+                        while Continue==1 & Pos(1)<PercPos(1)
+                            Pos(1)=Pos(1)+1;
+                            if DiffStart(Pos(1))*Sign<length(DiffStart)
+                                Limit(2)=Pos(1);
+                                Continue=0;
+                            end
+                        end
+                        Continue=0;
+                    end
+                end
+                if Limit(2)>0
+                    Pos(1)=Limit(2);
+                elseif Limit(1)>0
+                    Pos(1)=Limit(1);
+                else
+                    Pos(1)=1;
+                end
+
+                %correction of end
+                %detect the second cross between 1rd and 2nd sizer line
+                EndPerc1=Grid.perc{PercL}(PercPos(2):end,Sizer(1));
+                EndPerc2=Grid.perc{PercL}(PercPos(2):end,Sizer(2));
+                DiffEnd=EndPerc2-EndPerc1;
+                Pos(2)=length(DiffEnd);
+                while DiffEnd(Pos(2))==0
+                    Pos(2)=Pos(2)-1;
+                end
+                if DiffEnd(Pos(2))>0
+                    Sign=1;
+                else
+                    Sign=-1;
+                end
+                Continue=1;
+                %search the first inversion
+                Limit(1)=0;
+                Limit(2)=0;
+                while Continue==1 & Pos(2)>1
+                    Pos(2)=Pos(2)-1;
+                    if DiffEnd(Pos(2))*Sign<0
+                        Limit(1)=Pos(1);
+                        %search the second inversion (pos=>neg)
+                        while Continue==1 & Pos(2)>1
+                            Pos(2)=Pos(2)-1;
+                            if DiffEnd(Pos(2))*Sign>0
+                                Limit(2)=Pos(1);
+                                Continue=0;
+                            end
+                        end
+                        Continue=0;
+                    end
+                end
+
+                if Limit(2)>0
+                    Pos(2)=Limit(2);
+                elseif Limit(1)>0
+                    Pos(2)=Limit(1);
+                else
+                    Pos(2)=length(DiffEnd)-1;
+                end
+                Pos(2)=length(Grid.perc{PercL}(:,2))-(length(DiffEnd)-Pos(2))+1;
+                CompositFittedPerc{PercL}=[Grid.perc{PercL}(1:Pos(1)-1,Sizer(1));Grid.perc{PercL}(Pos(1):Pos(2)-1,Sizer(2));Grid.perc{PercL}(Pos(2):end,Sizer(1))];
+            end
+        end
+        for PercL=PercLimit(2,1):PercLimit(2,2)
+            CompositFittedPerc{PercL}=Grid.perc{PercL}(:,Sizer(1));
+        end
     end
     if DisplayFlag==1
-        figure(h1)
-        subplot(2,2,3)
-        hold on
-        if Sizer(2)>0
-            for PercL=PercLimit(1,1):PercLimit(1,2)
-                plot(RankGrid,Grid.perc{PercL}(:,Sizer(2)),'k')
+        if isequal(CalibType,'quantile')
+            figure(h1)
+            subplot(2,2,3)
+            hold on
+            if Sizer(2)>0
+                for PercL=PercLimit(1,1):PercLimit(1,2)
+                    plot(RankGrid,Grid.perc{PercL}(:,Sizer(2)),'k')
+                end
             end
+            for PercL=1:PercNb
+                plot(RankGrid,CompositFittedPerc{PercL},Colors(PercL))
+            end
+            %plot variations of ranks > 90
+            a=find(Rank>90);
+            plot(Rank(a),Var(a),'k.','markersize',3)
+            title('composit percentile curves')
+            xlabel('rank')
+            ylabel('percentile of variations')
         end
-        for PercL=1:PercNb
-            plot(RankGrid,CompositFittedPerc{PercL},Colors(PercL))
-        end
-        %plot variations of ranks > 90
-        a=find(Rank>90);
-        plot(Rank(a),Var(a),'k.','markersize',3)
-        title('composit percentile curves')
-        xlabel('rank')
-        ylabel('percentile of variations')
-
         figure(h2)
         subplot(2,2,3)
         hold on
@@ -533,33 +559,37 @@ if ~isempty(CurrPercPos)
         xlabel('rank')
         ylabel('percentile of variations')
     end
-    
-    LastVar=0;
-    for PercL=1:PercNb
-        RankNb=length(CompositFittedPerc{PercL});
-        FitParameter=polyfit(PercPos(2)-1:RankNb,...
-            CompositFittedPerc{PercL}(PercPos(2)-1:end)',1);
-        Try=polyval(FitParameter,PercPos(2)-1:RankNb);
-        if Try(end)<=LastVar
-            FitParameter=polyfit([PercPos(2)-1,RankNb],...
-                [CompositFittedPerc{PercL}(PercPos(2)-1),LastVar+eps],1);
+
+    if isequal(CalibType,'quantile')
+        LastVar=0;
+        for PercL=1:PercNb
+            RankNb=length(CompositFittedPerc{PercL});
+            FitParameter=polyfit(PercPos(2)-1:RankNb,...
+                CompositFittedPerc{PercL}(PercPos(2)-1:end)',1);
+            Try=polyval(FitParameter,PercPos(2)-1:RankNb);
+            if Try(end)<=LastVar
+                FitParameter=polyfit([PercPos(2)-1,RankNb],...
+                    [CompositFittedPerc{PercL}(PercPos(2)-1),LastVar+eps],1);
+            end
+            CompositFittedPerc{PercL}(PercPos(2)-1:end)=polyval(FitParameter,PercPos(2)-1:RankNb);
+            LastVar=CompositFittedPerc{PercL}(end);
         end
-        CompositFittedPerc{PercL}(PercPos(2)-1:end)=polyval(FitParameter,PercPos(2)-1:RankNb);
-        LastVar=CompositFittedPerc{PercL}(end);
     end
 
     if DisplayFlag==1
-        figure(h1)
-        subplot(2,2,4)
-        hold on
-        for PercL=1:PercNb
-            plot(RankGrid,CompositFittedPerc{PercL},Colors(PercL))
+        if isequal(CalibType,'quantile')
+            figure(h1)
+            subplot(2,2,4)
+            hold on
+            for PercL=1:PercNb
+                plot(RankGrid,CompositFittedPerc{PercL},Colors(PercL))
+            end
+            a=find(Rank>90);
+            plot(Rank(a),Var(a),'k.','markersize',3)
+            title('corrrected composit percentile curves')
+            xlabel('rank')
+            ylabel('percentile of variations')
         end
-        a=find(Rank>90);
-        plot(Rank(a),Var(a),'k.','markersize',3)
-        title('corrrected composit percentile curves')
-        xlabel('rank')
-        ylabel('percentile of variations')
 
         figure(h2)
         subplot(2,2,4)
@@ -578,8 +608,10 @@ else
     waitfor(h)
     CompositFittedMean=[Grid.mean(1:PercPos1-1,4);Grid.mean(PercPos1:end,3)];
     CompositFittedStd=[Grid.std(1:PercPos1-1,4);Grid.std(PercPos1:end,3)];
-    for PercL=1:PercNb
-        CompositFittedPerc{PercL}=[Grid.perc{PercL}(1:PercPos1-1,4);Grid.perc{PercL}(PercPos1:end,3)];
+    if isequal(CalibType,'quantile')
+        for PercL=1:PercNb
+            CompositFittedPerc{PercL}=[Grid.perc{PercL}(1:PercPos1-1,4);Grid.perc{PercL}(PercPos1:end,3)];
+        end
     end
 end
 
@@ -591,12 +623,13 @@ CompositFittedStd=interp1(RankGrid,CompositFittedStd,Rank);
 OutputRes.fitmean(SelIndex)=CompositFittedMean;
 OutputRes.fitstd(SelIndex)=CompositFittedStd;
 OutputRes.fitvar(SelIndex)=(Var-CompositFittedMean)./CompositFittedStd;
-
-for PercL=1:PercNb
-    Grid.perc{PercL}=CompositFittedPerc{PercL};
-    CompositFittedPerc{PercL}=interp1(RankGrid,CompositFittedPerc{PercL},Rank);
-end
-OutputRes.fitperc=CompositFittedPerc;
-for PercL=1:PercNb
-    OutputRes.gridperc{PercL}=Grid.perc{PercL};
+if isequal(CalibType,'quantile')
+    for PercL=1:PercNb
+        Grid.perc{PercL}=CompositFittedPerc{PercL};
+        CompositFittedPerc{PercL}=interp1(RankGrid,CompositFittedPerc{PercL},Rank);
+    end
+    OutputRes.fitperc=CompositFittedPerc;
+    for PercL=1:PercNb
+        OutputRes.gridperc{PercL}=Grid.perc{PercL};
+    end
 end
