@@ -70,7 +70,7 @@ TpFreq=ObsCdf-HoCdf;
 
 % difference between Obs and Ho are highly significant for low value of Ho
 % when computing TpFreq, starting from low value of Ho, TpFreq can't decrease
-MTpFreq=MAXSTEP_PREV(TpFreq,0);
+MTpFreq=make_monotonous(TpFreq,'inc');
 % Number of true
 TpNb=MTpFreq*DataNb;
 
@@ -201,7 +201,7 @@ HoCdf=HoCdf*Alpha;
 %RECALCULATE TP AFTER CORRECTION OF FO
 % True positive are the difference between observed and expected
 TpFreq=ObsCdf-HoCdf;
-MTpFreq=MAXSTEP_PREV(TpFreq,0);
+MTpFreq=make_monotonous(TpFreq,'inc');
 TpNb=MTpFreq*DataNb;
 NegIndex=find(TpNb<0);
  if ~isempty(NegIndex)
@@ -317,10 +317,10 @@ FDRInf=FpNbInf./(CorrFpNb+CorrTpNb);
 
 FNR=FnNb./(CorrFnNb+CorrTnNb);
 FNR(FNR>1)=1;
-MFDR=MINSTEP(FDR,1);
-MFDRSup=MINSTEP(FDRSup,1);
-MFDRInf=MINSTEP(FDRInf,1);
-MFNR=MINSTEP(FNR,0);
+MFDR=make_monotonous(FDR,'inc');
+MFDRSup=make_monotonous(FDRSup,'inc');
+MFDRInf=make_monotonous(FDRInf,'inc');
+MFNR=make_monotonous(FNR,'dec');
 
 FDR10pc=MFDR>=0.10;
 if ~isempty(find(FDR10pc))
@@ -351,7 +351,7 @@ PositiveNb(ZeroIndex)=eps;
 Sensitivity=TpNb./(PositiveNb);
 % When True positive is small, Sensitivity could be superior to one for small value of false negative
 Sensitivity(Sensitivity>1)=1;
-MSensitivity=MAXSTEP(Sensitivity,0);
+MSensitivity=make_monotonous(Sensitivity,'inc');
 
 NegativeNb=TnNb+FpNb;
 ZeroIndex=find(NegativeNb==0);
@@ -361,9 +361,9 @@ Specificity=TnNb./(NegativeNb);
 Specificity(Specificity>1)=1;
 MaxSpecificity=TnNbSup./(NegativeNb);
 MinSpecificity=TnNbInf./(NegativeNb);
-MSpecificity=MINSTEP(Specificity,0);
-MMinSpecificity=MINSTEP(MinSpecificity,0);
-MMaxSpecificity=MINSTEP(MaxSpecificity,0);
+MSpecificity=make_monotonous(Specificity,'dec');
+MMinSpecificity=make_monotonous(MinSpecificity,'dec');
+MMaxSpecificity=make_monotonous(MaxSpecificity,'dec');
 % used only for subplot not displayed presently
 % % % Chi2=DataNb*((TpFreq.^2./HoCdf)+(TpFreq.^2./(1-HoCdf)));
 % % % Chi2Stat=1-chi2Cdf(Chi2,1);
