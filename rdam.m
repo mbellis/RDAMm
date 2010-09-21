@@ -379,16 +379,17 @@ for RoundL=1:RoundNb
                     switch CalibType
                         case 'idem'
                             try
-                                if S{SRank}{CalibRank}.testSurf(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))>0
+                                Pos=find(S{SRank}{CalibRank}.position(:,1)==min(CalibRanks(CalibL,1),CalibRanks(CalibL,2))&S{SRank}{CalibRank}.position(:,2)==max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)));
+                                if ~isempty(Pos)
                                     if isempty(ClearIndex)
                                         %the existing calibration set must have its clearflag set to 0
-                                        if S{SRank}{CalibRank}.clearFlag(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==0
+                                        if S{SRank}{CalibRank}.clearFlag(Pos)==0
                                             ExistCalib(CalibL)=1;
                                         end
                                     else
                                         %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
                                         %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
-                                        if S{SRank}{CalibRank}.clearFlag(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==1
+                                        if S{SRank}{CalibRank}.clearFlag(Pos)==1
                                             ExistCalib(CalibL)=1;
                                         end
                                     end
@@ -397,16 +398,17 @@ for RoundL=1:RoundNb
                             end
                         case 'up'
                             try
-                                if S{SRank}{CalibRank}.testSurf(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))>0
+                                Pos=find(S{SRank}{CalibRank}.position(:,1)==min(CalibRanks(CalibL,1),CalibRanks(CalibL,2))&S{SRank}{CalibRank}.position(:,2)==max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)));
+                                if ~isempty(Pos)
                                     if isempty(ClearIndex)
                                         %the existing calibration set must have its clearflag set to 0
-                                        if S{SRank}{CalibRank}.clearFlag(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==0
+                                        if S{SRank}{CalibRank}.clearFlag(Pos)==0
                                             ExistCalib(CalibL)=1;
                                         end
                                     else
                                         %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
                                         %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
-                                        if S{SRank}{CalibRank}.clearFlag(min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==1
+                                        if S{SRank}{CalibRank}.clearFlag(Pos)==1
                                             ExistCalib(CalibL)=1;
                                         end
                                     end
@@ -415,20 +417,20 @@ for RoundL=1:RoundNb
                             end
                         case 'down'
                             try
-                                if S{SRank}{CalibRank}.testSurf(max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))>0
-                                    if isempty(ClearIndex)
-                                        %the existing calibration set must have its clearflag set to 0
-                                        if S{SRank}{CalibRank}.clearFlag(max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==0
-                                            ExistCalib(CalibL)=1;
-                                        end
-                                    else
-                                        %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
-                                        %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
-                                        if S{SRank}{CalibRank}.clearFlag(max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)),min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)))==1
-                                            ExistCalib(CalibL)=1;
-                                        end
+                                Pos=find(S{SRank}{CalibRank}.position(:,1)==max(CalibRanks(CalibL,1),CalibRanks(CalibL,2))&S{SRank}{CalibRank}.position(:,2)==min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)));
+                                if ~isempty(Pos)
+
+                                    %the existing calibration set must have its clearflag set to 0
+                                    if S{SRank}{CalibRank}.clearFlag(Pos)==0
+                                        ExistCalib(CalibL)=1;
                                     end
-                                end
+                                else
+                                    %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
+                                    %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
+                                    if S{SRank}{CalibRank}.clearFlag(Pos)==1
+                                        ExistCalib(CalibL)=1;
+                                    end
+                                end                            
                             catch
                             end
                     end
@@ -475,15 +477,17 @@ for RoundL=1:RoundNb
                     switch CalibType
                         case 'idem'
                             if CalibSaveFlag==1
-                                if S{SRank}{CalibRank}.testSurf(CalibRanks(1,1),CalibRanks(1,2))>S{SRank}{CalibRank}.testSurf(CalibRanks(2,1),CalibRanks(2,2))
-                                    CLine=1;
+                                Pos1=find(S{SRank}{CalibRank}.position(:,1)==CalibRanks(1,1)&S{SRank}{CalibRank}.position(:,2)==CalibRanks(1,2));
+                                Pos2=find(S{SRank}{CalibRank}.position(:,1)==CalibRanks(2,1)&S{SRank}{CalibRank}.position(:,2)==CalibRanks(2,2));                                
+                                if S{SRank}{CalibRank}.testSurf(Pos1)>S{SRank}{CalibRank}.testSurf(Pos2)
+                                    Pos=Pos1;
                                 else
-                                    CLine=2;
+                                    Pos=Pos2;
                                 end
-                                CurrZVal=S{SRank}{CalibRank}.zval{CalibRanks(CLine,1),CalibRanks(CLine,2)};
-                                CurrZVarCdf=S{SRank}{CalibRank}.cdf{CalibRanks(CLine,1),CalibRanks(CLine,2)};
-                                CurrMinZVar=S{SRank}{CalibRank}.minZVar(CalibRanks(CLine,1),CalibRanks(CLine,2));
-                                CurrMaxZVar=S{SRank}{CalibRank}.maxZVar(CalibRanks(CLine,1),CalibRanks(CLine,2));
+                                CurrZVal=S{SRank}{CalibRank}.zval{Pos};
+                                CurrZVarCdf=S{SRank}{CalibRank}.cdf{Pos};
+                                CurrMinZVar=S{SRank}{CalibRank}.minZVar(Pos);
+                                CurrMaxZVar=S{SRank}{CalibRank}.maxZVar(Pos);
                             else
                                 if CurrTestSurf(1)>CurrTestSurf(2)
                                     CurrZVal=CurrZVal{1};
@@ -499,17 +503,15 @@ for RoundL=1:RoundNb
                             end
                         case {'up','down'}
                             if CalibSaveFlag==1
-                                if isequal(CalibType,'up')
-                                    SLine=CalibRanks(1,1);
-                                    SColumn=CalibRanks(1,2);
+                                if isequal(CalibType,'up')                                    
+                                    Pos=find(S{SRank}{CalibRank}.position(:,1)==CalibRanks(1,1)&S{SRank}{CalibRank}.position(:,2)==CalibRanks(1,2));
                                 else
-                                    SLine=CalibRanks(1,2);
-                                    SColumn=CalibRanks(1,1);
+                                    Pos=find(S{SRank}{CalibRank}.position(:,1)==CalibRanks(1,2)&S{SRank}{CalibRank}.position(:,2)==CalibRanks(1,1));                                
                                 end
-                                CurrZVal=S{SRank}{CalibRank}.zval{SLine,SColumn};
-                                CurrZVarCdf=S{SRank}{CalibRank}.cdf{SLine,SColumn};
-                                CurrMinZVar=S{SRank}{CalibRank}.minZVar(SLine,SColumn);
-                                CurrMaxZVar=S{SRank}{CalibRank}.maxZVar(SLine,SColumn);
+                                CurrZVal=S{SRank}{CalibRank}.zval{Pos};
+                                CurrZVarCdf=S{SRank}{CalibRank}.cdf{Pos};
+                                CurrMinZVar=S{SRank}{CalibRank}.minZVar(Pos);
+                                CurrMaxZVar=S{SRank}{CalibRank}.maxZVar(Pos);
                             else
                                 CurrZVal=CurrZVal{1};
                                 CurrZVarCdf=CurrZVarCdf{1};
@@ -521,10 +523,11 @@ for RoundL=1:RoundNb
                     SLine=CalibScheme{RoundL}(1,CompL);
                     SColumn=CalibScheme{RoundL}(2,CompL);
                     CalibRank=CalibScheme{RoundL}(3,CompL);
-                    CurrZVal=S{SRank}{CalibRank}.zval{SLine,SColumn};
-                    CurrZVarCdf=S{SRank}{CalibRank}.cdf{SLine,SColumn};
-                    CurrMinZVar=S{SRank}{CalibRank}.minZVar(SLine,SColumn);
-                    CurrMaxZVar=S{SRank}{CalibRank}.maxZVar(SLine,SColumn);                
+                    Pos=find(S{SRank}{CalibRank}.position(:,1)==SLine&S{SRank}{CalibRank}.position(:,2)==SColumn);
+                    CurrZVal=S{SRank}{CalibRank}.zval{Pos};
+                    CurrZVarCdf=S{SRank}{CalibRank}.cdf{Pos};
+                    CurrMinZVar=S{SRank}{CalibRank}.minZVar(Pos);
+                    CurrMaxZVar=S{SRank}{CalibRank}.maxZVar(Pos);                
                 end
             end
             if length(find(HL==BL))==length(BL)
