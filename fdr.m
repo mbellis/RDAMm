@@ -205,28 +205,28 @@ MTpFreq=make_monotonous(TpFreq,'inc');
 TruePosNb=floor(max(MTpFreq*DataNb));
 TpNb=ceil(MTpFreq*DataNb);
 NegIndex=find(TpNb<0);
- if ~isempty(NegIndex)
-     TpNb(NegIndex)=0;
- end
- 
- 
-    %TruePosNb=max(TpNb);
-    if ~isempty(TruePosNb)
-        %TruePosNb=TruePosNb(1);    
-        if TruePosNb>0
-            TpMaxNbPos=find(TpNb>=TruePosNb);
-            FirstTpMaxNbPos=TpMaxNbPos(1);
-            LastTpMaxNbPos=TpMaxNbPos(end);
-        else
-            FirstTpMaxNbPos=1;            
-            LastTpMaxNbPos=1;
-        end
+if ~isempty(NegIndex)
+    TpNb(NegIndex)=0;
+end
+
+
+%TruePosNb=max(TpNb);
+if ~isempty(TruePosNb)
+    %TruePosNb=TruePosNb(1);
+    if TruePosNb>0
+        TpMaxNbPos=find(TpNb>=TruePosNb);
+        FirstTpMaxNbPos=TpMaxNbPos(1);
+        LastTpMaxNbPos=TpMaxNbPos(end);
     else
-        FirstTpMaxNbPos=1;   
+        FirstTpMaxNbPos=1;
         LastTpMaxNbPos=1;
     end
- 
- 
+else
+    FirstTpMaxNbPos=1;
+    LastTpMaxNbPos=1;
+end
+
+
 TruePosNb=TpNb(FirstTpMaxNbPos);
 TpNb(FirstTpMaxNbPos:end)=TruePosNb;
 %}}}

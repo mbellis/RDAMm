@@ -430,7 +430,7 @@ for RoundL=1:RoundNb
                                     if S{SRank}{CalibRank}.clearFlag(Pos)==1
                                         ExistCalib(CalibL)=1;
                                     end
-                                end                            
+                                end                         
                             catch
                             end
                     end
@@ -531,7 +531,7 @@ for RoundL=1:RoundNb
                 end
             end
             if length(find(HL==BL))==length(BL)
-                h=errodlg('HL (point nb %u) and BL (point nb %u) have identical values !',HLRanks(1),BLRanks(1));
+                h=errordlg('HL (point nb %u) and BL (point nb %u) have identical values !',HLRanks(1),BLRanks(1));
                 waitfor(h)
             else
                 [CurrZVar(:,CompL),CurrPv(:,CompL)]=getpv(HL,BL,CurrZVal,CurrZVarCdf,CurrMinZVar,CurrMaxZVar,NormType,[],[]);
@@ -609,9 +609,9 @@ if ComparisonFlag==1
     MeanCompNb=round(mean(CompNb));
     if DisplayFlag==1
         h=figure;
-        plot(ZVar,abs(Ppv),'k+','markersize',3)
+        plot(ZVar,abs(Ppv(:,1)),'k+','markersize',3)
         hold on
-        plot(ZVar,abs(Pv),'g+','markersize',3)
+        plot(ZVar,abs(Pv(:,1)),'g+','markersize',3)
     end  
     [ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=result(ZVar,Pv,Ppv,MeanCompNb,DisplayFlag);  
     if DisplayFlag==1
@@ -621,6 +621,9 @@ if ComparisonFlag==1
         plot(ZVar,abs(Fdr),'r.')
         plot(ZVar,abs(Sensitivity),'m.')
         set(gcf,'color',[1,1,1])
+        xlabel('ZVar')
+        ylabel('k&c:Ppv, g&y;Pv, r:Fdr, m:S')
+        title('statitists on ZVar')
     end
     
 end
@@ -827,60 +830,60 @@ RoundNb=size(ZVar,2);
 
 %a single Ppv curve is derived (%use abs(Ppv)
 
-    %find Zvar and Ppv limits
-    MinZVar=zeros(RoundNb,1);
-    MaxZVar=zeros(RoundNb,1);
-    MinPpv=zeros(RoundNb,2);
-    for RoundL=1:RoundNb
-        [MinZVar(RoundL),Pos]=min(ZVar(:,RoundL));
-        MinPpv(RoundL,1)=abs(Ppv(Pos,RoundL));
-        [MaxZVar(RoundL),Pos]=max(ZVar(:,RoundL));
-        MinPpv(RoundL,2)=Ppv(Pos,RoundL);
-    end
-    [MinZvar,Pos]=min(MinZVar);
-    MinZVar=floor(MinZVar);
-    MinPpvL=MinPpv(Pos,1);
-    [MaxZvar,Pos]=max(MaxZVar);    
-    MinPpvR=MinPpv(Pos,2);
+%find ZVar and Ppv limits
+MinZVar=zeros(RoundNb,1);
+MaxZVar=zeros(RoundNb,1);
+MinPpv=zeros(RoundNb,2);
+for RoundL=1:RoundNb
+    [MinZVar(RoundL),Pos]=min(ZVar(:,RoundL));
+    MinPpv(RoundL,1)=abs(Ppv(Pos,RoundL));
+    [MaxZVar(RoundL),Pos]=max(ZVar(:,RoundL));
+    MinPpv(RoundL,2)=Ppv(Pos,RoundL);
+end
+[MinZVar,Pos]=min(MinZVar);
+MinZVar=floor(MinZVar);
+MinPpvL=MinPpv(Pos,1);
+[MaxZVar,Pos]=max(MaxZVar);
+MinPpvR=MinPpv(Pos,2);
 
-    %replace each curve by an interpolated one 
-    InterpZVar=[MinZVar:0.01:MaxZvar]';
-    for RoundL=1:RoundNb
-        CurrZVar=ZVar(:,RoundL);
-        [CurrZVar,Index]=unique(CurrZVar);
-        CurrPpv=abs(Ppv(Index,RoundL));
-        NullPos=find(CurrZVar>=0);
-        NullPos=NullPos(1);
-        %remove outlier and meke monotonous
-        CurrPpv=[make_monotonous(CurrPpv(1:NullPos-1),'dec',1);make_monotonous(CurrPpv(NullPos:end),'dec',0)];
-        %interpolate on the same set of ZVar points
-        InterpPpv(:,RoundL)=interp1(CurrZVar,CurrPpv,InterpZVar,'linear','extrap');
-        InterpPpv(InterpZVar==0)=1;
-        %replace negative values
-        Pos=InterpPpv(:,RoundL)<=0&InterpZVar<0;
-        InterpPpv(Pos,RoundL)=MinPpvL;
-        Pos=InterpPpv(:,RoundL)<=0&InterpZVar>0;
-        InterpPpv(Pos,RoundL)=MinPpvR;        
-    end
-    NullPos=find(InterpZVar>=0);
+%replace each curve by an interpolated one
+InterpZVar=[MinZVar:0.01:MaxZVar]';
+for RoundL=1:RoundNb
+    CurrZVar=ZVar(:,RoundL);
+    [CurrZVar,Index]=unique(CurrZVar);
+    CurrPpv=abs(Ppv(Index,RoundL));
+    NullPos=find(CurrZVar>=0);
     NullPos=NullPos(1);
-    %take the mean
-    if RoundNb>1
-        InterpPpv=mean(InterpPpv,2);
-        %InterpPpv=[make_monotonous(InterpPpv(1:NullPos-1),'dec',1);make_monotonous(InterpPpv(NullPos:end),'dec',0)];
-    end
-    [InterpPpv,Index]=unique(InterpPpv);
-    InterpZVar=InterpZVar(Index);
-    InterpPpv=interp1(InterpZVar,InterpPpv,[MinZVar:0.01:MaxZvar]','linear','extrap');
-    InterpZVar=[MinZVar:0.01:MaxZvar]';
-    NullPos=find(InterpZVar>=0);
-    NullPos=NullPos(1);
-    InterpPpv(NullPos)=1;
-    Pos=InterpPpv<=0&InterpZVar<0;
-    InterpPpv(Pos)=MinPpvL;
-    Pos=InterpPpv<=0&InterpZVar>0;
-    InterpPpv(Pos)=MinPpvR;        
-    
+    %remove outlier and meke monotonous
+    CurrPpv=[make_monotonous(CurrPpv(1:NullPos-1),'dec',1);make_monotonous(CurrPpv(NullPos:end),'dec',0)];
+    %interpolate on the same set of ZVar points
+    InterpPpv(:,RoundL)=interp1(CurrZVar,CurrPpv,InterpZVar,'linear','extrap');
+    InterpPpv(InterpZVar==0)=1;
+    %replace negative values
+    Pos=InterpPpv(:,RoundL)<=0&InterpZVar<0;
+    InterpPpv(Pos,RoundL)=MinPpvL;
+    Pos=InterpPpv(:,RoundL)<=0&InterpZVar>0;
+    InterpPpv(Pos,RoundL)=MinPpvR;
+end
+NullPos=find(InterpZVar>=0);
+NullPos=NullPos(1);
+%take the mean
+if RoundNb>1
+    InterpPpv=mean(InterpPpv,2);
+    %InterpPpv=[make_monotonous(InterpPpv(1:NullPos-1),'dec',1);make_monotonous(InterpPpv(NullPos:end),'dec',0)];
+end
+[InterpZVar,Index]=unique(InterpZVar);
+InterpPpv=InterpPpv(Index);
+InterpPpv=interp1(InterpZVar,InterpPpv,[MinZVar:0.01:MaxZVar]','linear','extrap');
+InterpZVar=[MinZVar:0.01:MaxZVar]';
+NullPos=find(InterpZVar>=0);
+NullPos=NullPos(1);
+InterpPpv(NullPos)=1;
+Pos=InterpPpv<=0&InterpZVar<0;
+InterpPpv(Pos)=MinPpvL;
+Pos=InterpPpv<=0&InterpZVar>0;
+InterpPpv(Pos)=MinPpvR;
+
 
 %transform InterpPpv to get negative values for negative variations
 %InterpPpv(InterpZVar<0)=-InterpPpv(InterpZVar<0);
@@ -905,7 +908,7 @@ Ppv=interp1(InterpZVar,InterpPpv,ZVar,'linear','extrap');
 Pos=Ppv<=0&ZVar<0;
 Ppv(Pos)=MinPpvL;
 Pos=Ppv<=0&ZVar>0;
-Ppv(Pos)=MinPpvR;        
+Ppv(Pos)=MinPpvR;
 
 %don't use the mean of pv(ppv)
 MeanPv=mean(Pv,2);
@@ -938,7 +941,7 @@ if DisplayFlag==1
     line([0,0],[0,1],'color','k')
     xlabel('final ZVar')
     ylabel('final p-value of ppv')
-    title('correction of p-values (blue (green) before (after) correction)')     
+    title('correction of p-values (blue (green) before (after) correction)')
 end
 %forces to display Fdr, Sensitivity curves
 %DisplayFlag=1;
@@ -960,29 +963,56 @@ for TrendL=1:2
         CurrBindex=DecBindex;
         CurrPpv=Ppv(CurrBindex);
         SubPos=2;
-        Sign=-1;        
+        Sign=-1;
     end
-    
     CurrPv=Pv(CurrBindex);
     CurrZVar=ZVar(CurrBindex);
-    [SortedPpv DirectSort]=sort(CurrPpv);
-    SortedPv=CurrPv(DirectSort);
-    [Temp ReverseSort]=sort(DirectSort);
-    SortedZVar=CurrZVar(DirectSort);
+    
+%     [SortedPpv DirectSort]=sort(CurrPpv);
+%     SortedPv=CurrPv(DirectSort);
+%     [Temp ReverseSort]=sort(DirectSort);
+%     SortedZVar=CurrZVar(DirectSort);
+%     if TrendL==1
+%         SortedZVar=make_monotonous(SortedZVar,'dec');
+%     else
+%         SortedZVar=make_monotonous(SortedZVar,'inc');
+%     end
+
     if TrendL==1
-        SortedZVar=make_monotonous(SortedZVar,'dec');
+        [SortedZVar DirectSort]=sort(CurrZVar,'descend');
     else
-        SortedZVar=make_monotonous(SortedZVar,'inc');
-    end
+        [SortedZVar DirectSort]=sort(CurrZVar,'ascend');
+    end   
+    [Temp ReverseSort]=sort(DirectSort);
+    SortedPv=CurrPv(DirectSort);
+    SortedPpv=CurrPpv(DirectSort);   
+    SortedPpv=make_monotonous(SortedPpv,'inc');
+    
+
 
     [Temp,PpvCdf,Temp,Temp,Temp,Temp]=cumul_distribution(CurrPpv,0,0,0);
     [CurrFdr,CurrSensitivity,TruePosNb]= fdr(abs(SortedZVar),SortedPpv,SortedPv,PpvCdf,DisplayFlag,h,SubPos);
     CurrFdr=CurrFdr(ReverseSort);
-    Fdr(CurrBindex)=CurrFdr*Sign;
     CurrSensitivity=CurrSensitivity(ReverseSort);
+    %if exists null Fdr value, make a linear interpolation on ZVar to
+    %estimate non null Fdr values
+    %allows to keep the right order if data are ordered on Fdr
+    if min(CurrFdr)==0
+        %find the minimal non null value of fdr
+        NullPos=find(CurrFdr==0);        
+        PosFdr=CurrFdr;        
+        PosFdr(NullPos)=[];    
+        MinFdr=min(PosFdr);
+        %find the corresponding ZVar value
+        PosMinFdr=find(CurrFdr==MinFdr);
+        MinZVar=min(abs(CurrZVar(PosMinFdr)));
+        %interpolate ZVar on log10([MinFdr,eps])
+        LogNewFdr=interp1([MinZVar,max(abs(CurrZVar))],log10([MinFdr,eps]),abs(CurrZVar(NullPos)));
+        NewFdr=10.^LogNewFdr;
+        CurrFdr(NullPos)=NewFdr;
+    end                    
+    Fdr(CurrBindex)=CurrFdr*Sign;    
     Sensitivity(CurrBindex)=CurrSensitivity*Sign;
-    %Pv(CurrBindex)=Pv(CurrBindex)*Sign;
-    %Ppv(CurrBindex)=Ppv(CurrBindex);
     TotalVar(TrendL)=TruePosNb;
 end
 %return negative values for negative ZVar
