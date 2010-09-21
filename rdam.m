@@ -65,8 +65,8 @@
 %   unless calculus must be redone for a special reason; important if ClearIndex is not empty, because an existing calibration set can be different)
 %14- CalibSaveFlag: indicates if the output of noise_distribution must be saved or not
 %15- DisplayFlag: indicates if figures must be drawn or not
-%16- ComparisonFlag: indicates if the comparison must be done (if not the function is simply used to construct calibration sets which are stored in S{SRank}{CalibRank})
-%17 - SRank: Calibration set is stored in S{SRank}{CalibRank} (allows to disconnect
+%16- ComparisonFlag: indicates if the comparison must be done (if not the function is simply used to construct calibration sets which are stored in S{CalibRank})
+%17 - ResRank: Calibration set is stored in S and saved as sprintf(CalibSet_%02u,ResRank) (allows to disconnect
 %     construction of points dendrogram from calculus on biological conditions
 %     which allows to add easily new points).
 %18- CalibSchemeFlag: if equal to 1 indicates that a particular combination of
@@ -106,7 +106,7 @@
 %               by DataRanks (Chip Rank is not used since only one chip can
 %               be analyzed in ArrayMatic)
 %               S.field{CalibRank}
-%               is replaced by S{SRank}{CalibRank}.field
+%               is replaced by S{CalibRank}.field
 %               Use P.tmp for Transitory data (to be cleared before saving P)
 %               eExtend the function of CalibSchemFlag
 %V04 14-03-2010 Allows comparison between two points (without replicates)
@@ -116,7 +116,7 @@
 %V01 09-12-2009 - Refactoring of the existing version (not complete)
 
 function [ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(CompScheme,TGRankList,CGRankList,LoadDataFlag,RankThreshold,CalibType,ClearIndex,NormType,...
-    AnalyseType,SizerFittingDegree,SingleCalibPointFlag,SingleCalibCurveFlag,CalibUpdateFlag,CalibSaveFlag,DisplayFlag,ComparisonFlag,SRank,CalibSchemeFlag,varargin)
+    AnalyseType,SizerFittingDegree,SingleCalibPointFlag,SingleCalibCurveFlag,CalibUpdateFlag,CalibSaveFlag,DisplayFlag,ComparisonFlag,ResRank,CalibSchemeFlag,varargin)
 
 %with SaveFlag=1
 %rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,0,0,0);
@@ -176,11 +176,11 @@ elseif CalibSchemeFlag==1
         h=errordlg('must have 19 parameters');
         waitfor(h)
     else
-        %CalibScheme gives the coordinates of the test curve in S{SRank}{CalibRank} for
+        %CalibScheme gives the coordinates of the test curve in S{CalibRank} for
         %each comparison (e.g for CompScheme = {[1,2,3,4;1,2,3,4]} & TG=[7,8,9,10] & CG=[11,12,13,14]=>
         %CalibScheme = {[7,7,13,13;8,8,14,14;3,3,3]} indicates that for
         %comparison between first Test point (rank 7) and the first Control
-        %point (rank 11), the test curve used is located at S{SRank}{CalibRank}{3}(7,8)
+        %point (rank 11), the test curve used is located at S{CalibRank}{3}(7,8)
         CalibScheme=varargin{1};
     end
 elseif CalibSchemeFlag==2
@@ -188,7 +188,7 @@ elseif CalibSchemeFlag==2
         h=errordlg('must have 20 parameters');
         waitfor(h)
     else
-        %TGRankList4S and CGRankList4S gives the coordinates of the test curve in S{SRank}{CalibRank} for
+        %TGRankList4S and CGRankList4S gives the coordinates of the test curve in S{CalibRank} for
         %each comparison (e.g for CompScheme = {[1,2,3,4;1,2,3,4]} & TG=[1,2,3,4] & CG=[5,6,7,8]=>
         %TGRankList4S = [7,14,13,2] and TCGRankList4S=[8,3,25,6]} indicates
         %that the calibration set corresponding to {1,2} in TG is in
@@ -357,13 +357,13 @@ for RoundL=1:RoundNb
 
                 % if calibration set is constructed on true replicates (same biological conditions) the
                 % order of BLRank and HLRank does not matter but there exist only one test curve in
-                % S{SRank}{CalibRank} (at S{SRank}{CalibRank}.testcurve(min(BLRank,HLRank),max(BLRank,HLRank))
+                % S{CalibRank} (at S{CalibRank}.testcurve(min(BLRank,HLRank),max(BLRank,HLRank))
 
                 %if calibration set is constructed on points from different biological condition
                 %there exist two different test curves one constructed on increased values in the comparison
-                %max(BLRanks,HLRanks) vs min(BLRanks,HLRanks) (at S{SRank}{CalibRank}.testcurve(min(BLRank,HLRank),max(BLRank,HLRank))
+                %max(BLRanks,HLRanks) vs min(BLRanks,HLRanks) (at S{CalibRank}.testcurve(min(BLRank,HLRank),max(BLRank,HLRank))
                 %and one on decreased values in the comparisons
-                %max(BLRanks,HLRanks) vs min(BLRanks,HLRanks) (at S{SRank}{CalibRank}.testcurve(max(BLRank,HLRank),min(BLRank,HLRank))
+                %max(BLRanks,HLRanks) vs min(BLRanks,HLRanks) (at S{CalibRank}.testcurve(max(BLRank,HLRank),min(BLRank,HLRank))
 
                 ExistCalib(1)=0;
                 ExistCalib(2)=0;                
@@ -379,17 +379,17 @@ for RoundL=1:RoundNb
                     switch CalibType
                         case 'idem'
                             try
-                                Pos=find(S{SRank}{CalibRank}.position(:,1)==min(CalibRanks(CalibL,1),CalibRanks(CalibL,2))&S{SRank}{CalibRank}.position(:,2)==max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)));
+                                Pos=find(S{CalibRank}.position(:,1)==min(CalibRanks(CalibL,1),CalibRanks(CalibL,2))&S{CalibRank}.position(:,2)==max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)));
                                 if ~isempty(Pos)
                                     if isempty(ClearIndex)
                                         %the existing calibration set must have its clearflag set to 0
-                                        if S{SRank}{CalibRank}.clearFlag(Pos)==0
+                                        if S{CalibRank}.clearFlag(Pos)==0
                                             ExistCalib(CalibL)=1;
                                         end
                                     else
                                         %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
                                         %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
-                                        if S{SRank}{CalibRank}.clearFlag(Pos)==1
+                                        if S{CalibRank}.clearFlag(Pos)==1
                                             ExistCalib(CalibL)=1;
                                         end
                                     end
@@ -398,17 +398,17 @@ for RoundL=1:RoundNb
                             end
                         case 'up'
                             try
-                                Pos=find(S{SRank}{CalibRank}.position(:,1)==min(CalibRanks(CalibL,1),CalibRanks(CalibL,2))&S{SRank}{CalibRank}.position(:,2)==max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)));
+                                Pos=find(S{CalibRank}.position(:,1)==min(CalibRanks(CalibL,1),CalibRanks(CalibL,2))&S{CalibRank}.position(:,2)==max(CalibRanks(CalibL,1),CalibRanks(CalibL,2)));
                                 if ~isempty(Pos)
                                     if isempty(ClearIndex)
                                         %the existing calibration set must have its clearflag set to 0
-                                        if S{SRank}{CalibRank}.clearFlag(Pos)==0
+                                        if S{CalibRank}.clearFlag(Pos)==0
                                             ExistCalib(CalibL)=1;
                                         end
                                     else
                                         %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
                                         %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
-                                        if S{SRank}{CalibRank}.clearFlag(Pos)==1
+                                        if S{CalibRank}.clearFlag(Pos)==1
                                             ExistCalib(CalibL)=1;
                                         end
                                     end
@@ -417,17 +417,17 @@ for RoundL=1:RoundNb
                             end
                         case 'down'
                             try
-                                Pos=find(S{SRank}{CalibRank}.position(:,1)==max(CalibRanks(CalibL,1),CalibRanks(CalibL,2))&S{SRank}{CalibRank}.position(:,2)==min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)));
+                                Pos=find(S{CalibRank}.position(:,1)==max(CalibRanks(CalibL,1),CalibRanks(CalibL,2))&S{CalibRank}.position(:,2)==min(CalibRanks(CalibL,1),CalibRanks(CalibL,2)));
                                 if ~isempty(Pos)
 
                                     %the existing calibration set must have its clearflag set to 0
-                                    if S{SRank}{CalibRank}.clearFlag(Pos)==0
+                                    if S{CalibRank}.clearFlag(Pos)==0
                                         ExistCalib(CalibL)=1;
                                     end
                                 else
                                     %the existing calibration set must have its clearflag set to 1 (it's under the responsability of user to assume that it is the same
                                     %desired calibration set (otherwise CalibUpdateFlag must be set at 1)
-                                    if S{SRank}{CalibRank}.clearFlag(Pos)==1
+                                    if S{CalibRank}.clearFlag(Pos)==1
                                         ExistCalib(CalibL)=1;
                                     end
                                 end                         
@@ -437,13 +437,13 @@ for RoundL=1:RoundNb
                 end
 
                 if ExistCalib(1)==0||(ExistCalib(2)==0&&CalibNb==2)||CalibUpdateFlag==1
-                    %calculate calibration sets and save results in S{SRank}{CalibRank}
+                    %calculate calibration sets and save results in S{CalibRank}
                     for CalibL=1:CalibNb
                         if ExistCalib(CalibL)==0||CalibUpdateFlag==1
                             [HL,BL]=getdata(CalibRanks(CalibL,1),CalibRanks(CalibL,2),LoadDataFlag);
                             [RankGrid,Grid,ZVarGrid,SZVar]=noise_distribution(HL,BL,RankThreshold,CalibRanks(CalibL,1),CalibRanks(CalibL,2),ClearIndex,NormType,AnalyseType,CalibType,SizerFittingDegree,DisplayFlag);
                             clear HL BL
-                            fill_s(NormType,CalibType,0,[CalibRanks(CalibL,1),CalibRanks(CalibL,2)],Grid,SZVar,ZVarGrid,SRank,CalibSaveFlag)
+                            fill_s(NormType,CalibType,0,[CalibRanks(CalibL,1),CalibRanks(CalibL,2)],Grid,SZVar,ZVarGrid,ResRank,CalibSaveFlag)
                             if CalibSaveFlag==0
                                 CurrZVal{CalibL}=single(ZVarGrid);
                                 CurrZVarCdf{CalibL}=single(ZVarCdf);
@@ -477,17 +477,17 @@ for RoundL=1:RoundNb
                     switch CalibType
                         case 'idem'
                             if CalibSaveFlag==1
-                                Pos1=find(S{SRank}{CalibRank}.position(:,1)==CalibRanks(1,1)&S{SRank}{CalibRank}.position(:,2)==CalibRanks(1,2));
-                                Pos2=find(S{SRank}{CalibRank}.position(:,1)==CalibRanks(2,1)&S{SRank}{CalibRank}.position(:,2)==CalibRanks(2,2));                                
-                                if S{SRank}{CalibRank}.testSurf(Pos1)>S{SRank}{CalibRank}.testSurf(Pos2)
+                                Pos1=find(S{CalibRank}.position(:,1)==CalibRanks(1,1)&S{CalibRank}.position(:,2)==CalibRanks(1,2));
+                                Pos2=find(S{CalibRank}.position(:,1)==CalibRanks(2,1)&S{CalibRank}.position(:,2)==CalibRanks(2,2));                                
+                                if S{CalibRank}.testSurf(Pos1)>S{CalibRank}.testSurf(Pos2)
                                     Pos=Pos1;
                                 else
                                     Pos=Pos2;
                                 end
-                                CurrZVal=S{SRank}{CalibRank}.zval{Pos};
-                                CurrZVarCdf=S{SRank}{CalibRank}.cdf{Pos};
-                                CurrMinZVar=S{SRank}{CalibRank}.minZVar(Pos);
-                                CurrMaxZVar=S{SRank}{CalibRank}.maxZVar(Pos);
+                                CurrZVal=S{CalibRank}.zval{Pos};
+                                CurrZVarCdf=S{CalibRank}.cdf{Pos};
+                                CurrMinZVar=S{CalibRank}.minZVar(Pos);
+                                CurrMaxZVar=S{CalibRank}.maxZVar(Pos);
                             else
                                 if CurrTestSurf(1)>CurrTestSurf(2)
                                     CurrZVal=CurrZVal{1};
@@ -504,14 +504,14 @@ for RoundL=1:RoundNb
                         case {'up','down'}
                             if CalibSaveFlag==1
                                 if isequal(CalibType,'up')                                    
-                                    Pos=find(S{SRank}{CalibRank}.position(:,1)==CalibRanks(1,1)&S{SRank}{CalibRank}.position(:,2)==CalibRanks(1,2));
+                                    Pos=find(S{CalibRank}.position(:,1)==CalibRanks(1,1)&S{CalibRank}.position(:,2)==CalibRanks(1,2));
                                 else
-                                    Pos=find(S{SRank}{CalibRank}.position(:,1)==CalibRanks(1,2)&S{SRank}{CalibRank}.position(:,2)==CalibRanks(1,1));                                
+                                    Pos=find(S{CalibRank}.position(:,1)==CalibRanks(1,2)&S{CalibRank}.position(:,2)==CalibRanks(1,1));                                
                                 end
-                                CurrZVal=S{SRank}{CalibRank}.zval{Pos};
-                                CurrZVarCdf=S{SRank}{CalibRank}.cdf{Pos};
-                                CurrMinZVar=S{SRank}{CalibRank}.minZVar(Pos);
-                                CurrMaxZVar=S{SRank}{CalibRank}.maxZVar(Pos);
+                                CurrZVal=S{CalibRank}.zval{Pos};
+                                CurrZVarCdf=S{CalibRank}.cdf{Pos};
+                                CurrMinZVar=S{CalibRank}.minZVar(Pos);
+                                CurrMaxZVar=S{CalibRank}.maxZVar(Pos);
                             else
                                 CurrZVal=CurrZVal{1};
                                 CurrZVarCdf=CurrZVarCdf{1};
@@ -523,11 +523,11 @@ for RoundL=1:RoundNb
                     SLine=CalibScheme{RoundL}(1,CompL);
                     SColumn=CalibScheme{RoundL}(2,CompL);
                     CalibRank=CalibScheme{RoundL}(3,CompL);
-                    Pos=find(S{SRank}{CalibRank}.position(:,1)==SLine&S{SRank}{CalibRank}.position(:,2)==SColumn);
-                    CurrZVal=S{SRank}{CalibRank}.zval{Pos};
-                    CurrZVarCdf=S{SRank}{CalibRank}.cdf{Pos};
-                    CurrMinZVar=S{SRank}{CalibRank}.minZVar(Pos);
-                    CurrMaxZVar=S{SRank}{CalibRank}.maxZVar(Pos);                
+                    Pos=find(S{CalibRank}.position(:,1)==SLine&S{CalibRank}.position(:,2)==SColumn);
+                    CurrZVal=S{CalibRank}.zval{Pos};
+                    CurrZVarCdf=S{CalibRank}.cdf{Pos};
+                    CurrMinZVar=S{CalibRank}.minZVar(Pos);
+                    CurrMaxZVar=S{CalibRank}.maxZVar(Pos);                
                 end
             end
             if length(find(HL==BL))==length(BL)
