@@ -41,8 +41,6 @@ PpvPvMin=min(PpvPv);
 PpvPvMinPos=find(PpvPv==PpvPvMin);
 PpvPvMinPos=PpvPvMinPos(1);
 if PpvPvMinPos>1 %abnormal position of minimum
-    h=warndlg(sprintf('fdr: position of first min(PpvPv) >1 (%u)',PpvPvMinPos));         
-    waitfor(h)
     PpvPv(1:PpvPvMinPos)=PpvPvMin;
 end
 
@@ -51,8 +49,6 @@ PpvCdfMinPos=find(PpvCdf==PpvCdfMin);
 PpvCdfMinPos=PpvCdfMinPos(1);
 
 if PpvCdfMinPos>1
-    h=warndlg(sprintf('fdr: position of first min(PpvCdf) >1 (%u)',PpvCdfMinPos));
-    waitfor(h)
     PpvCdf(1:PpvCdfMinPos)=PpvCdfMin;
 end
 
