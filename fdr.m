@@ -1,27 +1,36 @@
-%&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-% FUNCTION fdr
-%&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+%%%%%%%%%%%%%%%%
+% FUNCTION FDR %
+%%%%%%%%%%%%%%%%
 
-% calculate fdr, sensitivity
+% FDR calculates fdr and sensitivity.
 
 %INPUT PARAMETERS
-%1- Ppv: the product of p-values
-%2- PpvPv: the p-value of Ppv (calculated in case of null hypothesis)
-%3- PpvCdf: the observed cumulative distribution frequency of Ppv
-%4- DisplayFlag: indicates if figures must be drawn or not
-%5- FigH: the figure handle
-%7- SubPos: subplot position
+% 1        ZVar: normalized variation
+% 2         Ppv: the product of p-values
+% 3       PpvPv: the p-value of Ppv (calculated in case of null hypothesis)
+% 4      PpvCdf: the observed cumulative distribution frequency of Ppv
+% 5 DisplayFlag: indicates if figures must be drawn or not
+% 6        FigH: the figure handle
+% 7      SubPos: subplot position
 
 %OUTPUT PARAMETERS
-%1- Fdr: False Discovery Rate of Ppv
-%2- Fnr: False Undiscovery Rage of Ppv
-%3- Sensitivity: sensitivity of Ppv
-%4- Specificity: specificity of Ppv
-%5- TruePosNb: estimate of the number of true variation
+% 1         Fdr: False Discovery Rate of Ppv
+% 2 Sensitivity: sensitivity of Ppv
+% 3   TruePosNb: estimated true variation
 
-%VERSIONS
-%V02 31-8-2010 Detect abnormal position of total variation estimation
-%V01 22-3-2010 Refactoring of the existing version
+
+%¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
+%                          c) Michel Bellis                                                %
+%                          michel.bellis@crbm.cnrs.fr                                      %
+%            Affiliation:  CNRS (Centre National de la Recherche Scientifique - France)    %                               
+%  Bioinformatic Project:  ARRAYMATIC => http://code.google.com/p/arraymatic               %
+%        Code Repository:  GITHUB => http://github.com/mbellis                             %
+%¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
+
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
+%  THIS CODE IS DISTRIBUTED UNDER THE CeCILL LICENSE, WHICH IS COMPATIBLE WITH       %
+%  THE GNU GENERAL PUBLIC LICENCE AND IN ACCORDANCE WITH THE EUROPEAN LEGISLATION.   %
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
 
 
 function [Fdr,Sensitivity,TruePosNb]= fdr(ZVar,Ppv,PpvPv,PpvCdf,DisplayFlag,FigH,SubPos)

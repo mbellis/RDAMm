@@ -1,8 +1,8 @@
-%&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-% FUNCTION noise_distribution
-%&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FUNCTION NOISE_DISTRIBUTION %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Calculates noise distribution
+% NOISE_DISTRIBUTION calculates noise distribution:
 % The distribution of the variation between two series of rank values (one called a baseline (BL)
 % and the other called a highline (HL)) is computed
 % The units used for representing the variation  is the difference between the ranks of values (rank diff)
@@ -13,61 +13,68 @@
 % are smoothed by interpolation (spline)
 
 % INPUT PARAMETERS
-% HLValues: the highline values
-% BLValues: the baseline values
-% RankThreshold: a vector of two values allowing to start the process of constructing quantile curves using
-%                a defined range of rank values (>=RankThreshold(1)&<=RankThreshold(2))
-% HLRank: the rank of point used as highline
-% BLRank: the rank of point used as baseline
-% ClearIndex: allow to clear some points from the points used in the calibration process
-% NormType: either 'standardization' (original method in RDAM = var - mean /std)
-%                    or 'quantile' (more general method based on percentile curves)
-% AnalyseType : either 'transcriptome' or 'chipchip' (some parameters have to be adapted to the type of analysis)
-% CalibType: the type of data, either
-%   up or down: distinct biological conditions
-%              up : only the values which are increased in the HL vs BL comparison are used
-%              down : only the values which are decreased in the HL vs BL comparison are used
-%              used for chiphip analysis type
-%              and for biological conditions without replicates
-%   idem: replicates of the same biological condition
-%               [HL,BL] is compared to [BL,HL] (no distinction between increased and decreased distribution which should be equal)
-%SizerFittingDegrees: used by sizer (the procedure of curve smoothing).Indicates the number of increasing fitting degrees used
-%SaveFlag: indicates if the output must be saved or not
-%DisplayFlag: indicates if figures must be drawn or not
+% 1             HLValues: the highline values
+% 2             BLValues: the baseline values
+% 3        RankThreshold: a vector of two values allowing to start the process of constructing quantile curves using
+%                           a defined range of rank values (>=RankThreshold(1)&<=RankThreshold(2))
+% 4               HLRank: the rank of point used as highline
+% 5               BLRank: the rank of point used as baseline
+% 6           ClearIndex: allow to clear some points from the points used in the calibration process
+% 7             NormType: either 'standardization' (original method in RDAM = var - mean /std)
+%                         or 'quantile' (more general method based on percentile curves)
+% 8         AnalyseType : either 'transcriptome' or 'chipchip' (some parameters have to be adapted to the type of analysis)
+% 9            CalibType: the type of data, either
+%                         up or down: distinct biological conditions
+%                         up: only the values which are increased in the HL vs BL comparison are used
+%                         down: only the values which are decreased in the HL vs BL comparison are used
+%                               used for chiphip analysis type
+%                               and for biological conditions without replicates
+%                         idem: replicates of the same biological condition
+%                               [HL,BL] is compared to [BL,HL] (no distinction between increased and decreased distribution which should be equal)
+% 10 SizerFittingDegrees: used by sizer (the procedure of curve smoothing).Indicates the number of increasing fitting degrees used
+% 11         DisplayFlag: indicates if figures must be drawn or not
 
 %OUTPUT PARAMETERS
-%RankGrid: sampling range of ranks [0.25:0.25:100]
-%Grid: smoothed variation curves corresponding to RankGrid
-%ZVarGrid: Normalized variations used for 2-D interpolation
-%ZVar: normalized variations (ZVar=interp2(RankGrid,VarGrid,ZVarGrid,Rank,Var))
+% 1 RankGrid: sampling range of ranks [0.25:0.25:100]
+% 2     Grid: smoothed variation curves corresponding to RankGrid
+% 3 ZVarGrid: Normalized variations used for 2-D interpolation
+% 4     ZVar: normalized variations (ZVar=interp2(RankGrid,VarGrid,ZVarGrid,Rank,Var))
 
-% VARIABLE NAME
-%Val values (ranks)
-%Var variations (rank differences)
-%Perc percentile
-%Pos positive variations
-%Neg negative variations
-%S~ sorted values
-%P~ values that keep the correspondance with sorted value
-%Y=f(X) => [SX,SortIndex]=sort(X) => PY=Y(SortIndex)
-%the original order can be find with : [temp ReverseIndex]=sort(SortIndex) => X=SX(ReverseIndex)
+% VARIABLE NAMES
+%  Val: values (ranks)
+%  Var: variations (rank differences)
+% Perc: percentile
+%  Pos: positive variations
+%  Neg: negative variations
+%   S~: sorted values
+%   P~: values that keep the correspondance with sorted value
 
-%difference between Index and Bindex:
-%a=[0,2,45,0]
-%Index=find(a==0) => Index=[1,4]
-%Bindex=a==0 => Bindex=[1,0,0,1]
+% SORT USING
+% Y=f(X) => [SX,SortIndex]=sort(X) => PY=Y(SortIndex)
+% the original order can be find with : [temp ReverseIndex]=sort(SortIndex) => X=SX(ReverseIndex)
 
-%VERSIONS
-%V01 6-10-2009 Refactoring of the existing version
-%V02 3-12-2009 Added management of NormType = 'standardization'
+% DIFFERENCE BETWEEN INDEX AND BINDEX:
+% a=[0,2,45,0]
+% Index=find(a==0) => Index=[1,4]
+% Bindex=a==0 => Bindex=[1,0,0,1]
+
+
+%¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
+%                          c) Michel Bellis                                                %
+%                          michel.bellis@crbm.cnrs.fr                                      %
+%            Affiliation:  CNRS (Centre National de la Recherche Scientifique - France)    %                               
+%  Bioinformatic Project:  ARRAYMATIC => http://code.google.com/p/arraymatic               %
+%        Code Repository:  GITHUB => http://github.com/mbellis                             %
+%¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
+
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
+%  THIS CODE IS DISTRIBUTED UNDER THE CeCILL LICENSE, WHICH IS COMPATIBLE WITH       %
+%  THE GNU GENERAL PUBLIC LICENCE AND IN ACCORDANCE WITH THE EUROPEAN LEGISLATION.   %
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
 
 
 function [RankGrid,Grid,ZVarGrid,ZVar]=noise_distribution(HLValues,BLValues,RankThreshold,HLRank,BLRank,ClearIndex,NormType,...
     AnalyseType,CalibType,SizerFittingDegree,DisplayFlag)
-% global variables used to pass parameters (used in the context of an application)
-%global F K P S
-%[RankGrid,Grid,ZVarGrid,ZVar]=noise_distribution(Data{1}{1}.rank,Data{2}{1}.rank,[0,0],1,2,[],'standardization','transcriptome','idem',7,1)
-%[RankGrid,Grid,ZVarGrid,ZVar]=noise_distribution(Data{1}{1}.rank,Data{2}{1}.rank,[0,0],1,2,[],'standardization','transcriptome','up',7,1)
 
 
 RankNb=length(BLValues);

@@ -1,9 +1,8 @@
-%rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,1);
-%rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,0,1);
-%&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-% FUNCTION rdam
-%&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+%%%%%%%%%%%%%%%%%
+% FUNCTION RDAM %
+%%%%%%%%%%%%%%%%%
 
+% RDAM implements Rank Difference Analysis of Microarray algorithm:
 % Find which variations are statistically significative when comparing two groups
 %   of points, each point being a series of rank values. One group is called the test group (TG)
 %   and the other is called the control group (CG). The comparison is TG vs CG.  Increased (devreased) probesets are those
@@ -35,119 +34,94 @@
 
 %INPUT PARAMETERS
 
-%1- CompScheme : The comparisons to be made
-%2&3- TGRankList and CGRankList: list of data ranks used in the comparisons
-%   if TGRankList=[12,15,23], the Data used for TG point in position 1 is
-%   DataRanks(:,12)
-%4- LoadDataFlag = 1 indicates that each data point must be loaded when to be used (no permanent storage of DataRanks in the memory)
-%5- RankThreshold: a vector of two values allowing to start the process of
-%constructing quantile curves using
-%   a defined range of rank values (>=RankThreshold(1)&<=RankThreshold(2))
-%6- CalibType indicates the type of couple of two replicates used to calculate the calibration set for the current comparison.
-%   The couple noted {G1,G2}, which is passed as parameter, indicates the
-%   G1 and G2 will be identified to the HL and BL lines, respectively, in the noise_distribution function.
-%   If (TG1,TG2) and (CG1,CG2) are the two couples of replicates for the the TG and CG condition, respectively, we have three possibilities:
-%   CalibType='idem' =>  {TG1,TG2} or {CG1,CG2} is used,
-%   CalibType='up' =>  {TG1,CG1} or {TG2,CG2} is used,
-%   CalibType='down' => {CG1,TG1} or {CG2,TG2} is used.
-%   A rule allows to choose the right couple from the two existing ones (FirstCouple, SndCouple).
-%7- ClearIndex: allows to clear some points from the points used in the calibration process(e.g. probe sets that are
-%   linked to gender can'b eliminated from calibration process in case where points used as replicates in the
-%   calibration process belong to different gender)
-%8- NormType: either 'standardization' (original method in RDAM = var - mean /std)
-%   or 'quantile' (more general method based on percentile curves)
-%9- AnalyseType : either 'transcriptome' or 'chipchip' (some parameters have to be adapted to the type of analysis)
-%10- SizerFittingDegrees: used by sizer (the procedure of curve smoothing).Indicates the number of increasing fitting degrees used
-%11- SingleCalibPointFlag = 1 indicates that the same TG (CG) point is used to construct the pairs of TG (CG) points that are
-%   considered as replicates in the calibration process (noise_distribution script)
-%12- SingleCalibCurveFlag = 1 indicates that a single calibration set is used for all the comparisons
-%13- CalibUpdateFlag: indicates if noise_distribution must be run even if calibration set already exist (should be 0 if clearIndex=[]
-%   unless calculus must be redone for a special reason; important if ClearIndex is not empty, because an existing calibration set can be different)
-%14- CalibSaveFlag: indicates if the output of noise_distribution must be saved or not
-%15- DisplayFlag: indicates if figures must be drawn or not
-%16- ComparisonFlag: indicates if the comparison must be done (if not the function is simply used to construct calibration sets which are stored in S{CalibRank})
-%17 - ResRank: Calibration set is stored in S and saved as sprintf(CalibSet_%02u,ResRank) (allows to disconnect
-%     construction of points dendrogram from calculus on biological conditions
-%     which allows to add easily new points).
-%18- CalibSchemeFlag: if equal to 1 indicates that a particular combination of
-%    calibration set is used (e.g. in double chanel technics)
-%    if equal to 2, indicates the correspondance between TGRankList and
-%    CGRankList and the real position in S (used when P.flag.loadData==1 to
-%    allow a correct selection of calibration set)
-
+% 1           CompScheme : The comparisons to be made
+% 2            TGRankList: list of data ranks used in the comparisons
+%                           if TGRankList=[12,15,23], the Data used for TG point in position 1 is DataRanks(:,12)
+% 3            CGRankList: list of data ranks used in the comparisons
+% 4          LoadDataFlag: = 1 indicates that each data point must be loaded when to be used (no permanent storage of DataRanks in the memory)
+% 5         RankThreshold: a vector of two values allowing to start the process of
+%                          constructing quantile curves using
+%                          a defined range of rank values (>=RankThreshold(1)&<=RankThreshold(2))
+% 6             CalibType: indicates the type of couple of two replicates used to calculate the calibration set for the current comparison.
+%                          The couple noted {G1,G2}, which is passed as parameter, indicates the
+%                          G1 and G2 will be identified to the HL and BL lines, respectively, in the noise_distribution function.
+%                          If (TG1,TG2) and (CG1,CG2) are the two couples of replicates for the the TG and CG condition, respectively, we have three possibilities:
+%                          CalibType='idem' =>  {TG1,TG2} or {CG1,CG2} is used,
+%                          CalibType='up' =>  {TG1,CG1} or {TG2,CG2} is used,
+%                          CalibType='down' => {CG1,TG1} or {CG2,TG2} is used.
+%                          A rule allows to choose the right couple from the two existing ones (FirstCouple, SndCouple).
+% 7            ClearIndex: allows to clear some points from the points used in the calibration process(e.g. probe sets that are
+%                          linked to gender can'b eliminated from calibration process in case where points used as replicates in the
+%                          calibration process belong to different gender)
+% 8              NormType: either 'standardization' (original method in RDAM = var - mean /std)
+%                          or 'quantile' (more general method based on percentile curves)
+% 9           AnalyseType: either 'transcriptome' or 'chipchip' (some parameters have to be adapted to the type of analysis)
+% 10  SizerFittingDegrees: used by sizer (the procedure of curve smoothing).Indicates the number of increasing fitting degrees used
+% 11 SingleCalibPointFlag: = 1 indicates that the same TG (CG) point is used to construct the pairs of TG (CG) points that are
+%                          considered as replicates in the calibration process (noise_distribution script)
+% 12 SingleCalibCurveFlag: = 1 indicates that a single calibration set is used for all the comparisons
+% 13      CalibUpdateFlag: indicates if noise_distribution must be run even if calibration set already exist (should be 0 if clearIndex=[]
+%                          unless calculus must be redone for a special reason; important if ClearIndex is not empty, because an existing calibration set can be different)
+% 14        CalibSaveFlag: indicates if the output of noise_distribution must be saved or not
+% 15          DisplayFlag: indicates if figures must be drawn or not
+% 16       ComparisonFlag: indicates if the comparison must be done (if not the function is simply used to construct calibration sets which are stored in S{CalibRank})
+% 17              ResRank: Calibration set is stored in S and saved as sprintf(CalibSet_%02u,ResRank) (allows to disconnect
+%                          construction of points dendrogram from calculus on biological conditions
+%                          which allows to add easily new points).
+% 18      CalibSchemeFlag: if equal to 1 indicates that a particular combination of
+%                          calibration set is used (e.g. in double chanel technics)
+%                          if equal to 2, indicates the correspondance between TGRankList and
+%                          CGRankList and the real position in S (used when P.flag.loadData==1 to
+%                          allow a correct selection of calibration set)
 %     
 %[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam({[1,19;2,19]},[1:19],[1:19],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,0,0,1,0);
-%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam({[1;1]},[1],[19],0,[0,0],'idem
-%',[],'quantile','transcriptome',7,0,0,0,1,0,1,1,1,{[1;19;3]});
 
-%VARARGIN PARAMETERS
-% if SingleCalibPointFlag==1, HLCalibRank = varargin{1} & CGCalibRank = varargin{2} indicates the ranks of points that are
-%   systematically used to construct pairs of  calibration points (HLCalibRank (CGCalibRank) must not be equal to any of
-%   the points contained in TGRankList (CGRankList))
-% if SingleCalibCurveFlag==1, only one calibration set is used zval=varargin{1} pv=varargin{2}
-% if CalibSchemeFlag==1, CalibScheme (varargin{}) indicates which calibration set to use for each comparison
+% VARARGIN PARAMETERS
+% if SingleCalibPointFlag==1: HLCalibRank = varargin{1} & CGCalibRank = varargin{2} indicates the ranks of points that are
+%                             systematically used to construct pairs of  calibration points (HLCalibRank (CGCalibRank) must not be equal to any of
+%                             the points contained in TGRankList (CGRankList))
+% if SingleCalibCurveFlag==1: only one calibration set is used zval=varargin{1} pv=varargin{2}
+%      if CalibSchemeFlag==1: CalibScheme (varargin{}) indicates which calibration set to use for each comparison
 
-%OUTPUT PARAMETERS
-% ZVar : normalized variation (from 0 to 100 for INCREASED and -100 to 0 for DECREASED)
-% Ppv : product of p-values (from 0 to 1 for INCREASED and -1 to 0 for DECREASED)
-% Pv : p-value of Ppv  (from 0 to 1 for INCREASED and -1 to 0 for DECREASED)
-% Sensitivity (from 0 to 1 for INCREASED and -1 to 0 for DECREASED)
-% TotalVar : estimate of the total number of increased and decreased probe sets
+% OUTPUT PARAMETERS
+% 1        ZVar: normalized variation (from 0 to 100 for INCREASED and -100 to 0 for DECREASED)
+% 2          Pv: p-value of Ppv  (from 0 to 1 for INCREASED and -1 to 0 for DECREASED)
+% 3         Ppv: product of p-values (from 0 to 1 for INCREASED and -1 to 0 for DECREASED)
+% 4         Fdr: false discovery rate
+% 5 Sensitivity: from 0 to 1 for INCREASED and -1 to 0 for DECREASED
+% 6    TotalVar: estimate of the total number of increased and decreased probe sets
 
-%GLOBAL VARIABLES
+% GLOBAL VARIABLES
 % DataRanks contains data ranks (if LoadDataFlag==1,  DataRanks is empty)
 % K contains directory names
 % P contains metadata (P.point : description of points, P.biol: description of biological conditions ...)
 % S contains calibration sets
 
-%VERSIONS
-%V05 22-06-2010 Refactoring for adaptation to new ArrayMatic version
-%               The data structure is simpler : Data{Chip Rank} is replaced
-%               by DataRanks (Chip Rank is not used since only one chip can
-%               be analyzed in ArrayMatic)
-%               S.field{CalibRank}
-%               is replaced by S{CalibRank}.field
-%               Use P.tmp for Transitory data (to be cleared before saving P)
-%               eExtend the function of CalibSchemFlag
-%V04 14-03-2010 Allows comparison between two points (without replicates)
-%               Added CalibScheme to extend calibration possibilities
-%V03 19-01-2010 Completely refactored version
-%V02 19-01-2010 Completely refactored version but for internal usage (comparison with previous results)
-%V01 09-12-2009 - Refactoring of the existing version (not complete)
+
+%¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
+%                          c) Michel Bellis                                                %
+%                          michel.bellis@crbm.cnrs.fr                                      %
+%            Affiliation:  CNRS (Centre National de la Recherche Scientifique - France)    %                               
+%  Bioinformatic Project:  ARRAYMATIC => http://code.google.com/p/arraymatic               %
+%        Code Repository:  GITHUB => http://github.com/mbellis                             %
+%¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
+
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
+%  THIS CODE IS DISTRIBUTED UNDER THE CeCILL LICENSE, WHICH IS COMPATIBLE WITH       %
+%  THE GNU GENERAL PUBLIC LICENCE AND IN ACCORDANCE WITH THE EUROPEAN LEGISLATION.   %
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
+
 
 function [ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(CompScheme,TGRankList,CGRankList,LoadDataFlag,RankThreshold,CalibType,ClearIndex,NormType,...
     AnalyseType,SizerFittingDegree,SingleCalibPointFlag,SingleCalibCurveFlag,CalibUpdateFlag,CalibSaveFlag,DisplayFlag,ComparisonFlag,ResRank,CalibSchemeFlag,varargin)
 
-%with SaveFlag=1
-%rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,0,0,0);
-%exemple used in processing double chanel chip
-%Create calibration sets
-%rdam(1,{[1,2;1,2]},[5,6],[1,2],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,0,0);
-%rdam(1,{[1,2;1,2]},[7,8],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,0,0);
-%rdam(1,{[1,2;1,2]},[1,5],[2,6],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,0,0);
-%rdam(1,{[1,2;1,2]},[3,7],[4,8],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,0,0);
-%Do analysis by indicating the calibration sets to be used in each comparison
-%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(1,{[1,2;1,2]},[5,6],[1,2],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,1,0);
-%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(1,{[1,2;1,2]},[7,8],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,1,0);
-%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(1,{[1,2,3,4;1,2,3,4]},[5,6,7,8],[1,2,3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,1,1,{[1,1,3,3;2,2,4,4;3,3,3,3]});
-%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam(1,{[1,2,3,4;1,2,3,4]},[5,6,7,8],[1,2,3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,1,1,{[1,2,3,4;5,6,7,8;3,3,3,3]});
-
-%with CalibUpdateFlag=1 & SaveFlag=0
-%rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,1,0,0,0,0);
-%with ComparisonFlag=1 & SaveFlag=1 & DisplayFlag=1
-%rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,1,1,0);
-%rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'up',[],'quantile','transcriptome',7,0,0,0,0,0,0,0);
-%rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'standardization','transcriptome',7,0,0,0,0,0,0,0);
-%rdam(1,{[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'down',[],'standardizatio
-%n','transcriptome',7,0,0,0,0,0,0,0);
-
-
+% global variables used to pass parameters (used in the context of ArrayMatiC application)
 global DataRanks P S
 
 %% Verifications
 if SingleCalibPointFlag==1
-    if nargin~=19
-        h=errordlg('must have 19 parameters');
+    if nargin~=20
+        h=errordlg('must have 18 parameters');
         waitfor(h)
     else
         HLCalibRank=varargin{1};

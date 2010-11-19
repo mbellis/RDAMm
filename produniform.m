@@ -1,18 +1,18 @@
-%&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-% FUNCTION produniform
-%&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+%%%%%%%%%%%%%%%%%%%%%%%%
+% FUNCTION PRODUNIFORM %
+%%%%%%%%%%%%%%%%%%%%%%%%
 
-%INPUT PARAMETERS
-%1- ProdNb: the number of variables in the product
+% PRODUNIFORM calculates the product of several independant uniform random variables.
 
-%OUTPUT PARAMETERS
-% PpvList: the list of Ppv
-% PPvCdf: the probabilities for Ppv
+% INPUT PARAMETERS
+% 1 ProdNb: the number of variables in the product
 
-%VERSION
-%V02 22-06-2010 Test first value [PpvVal,PpvCdf]=[0,0];
-%V01 14-04-2010 
-%       Translated from C program with this Copyright
+% OUTPUT PARAMETERS
+% 1 PpvList: the list of Ppv
+% 2  PPvCdf: the probabilities for Ppv
+
+% COPYRIGHT
+% Translated from C program with this Copyright
 %       Copyrights Orestis Georgiou   25-8-09
 %
 %       This program is related to the paper:
@@ -24,6 +24,20 @@
 %        variable X, consisting of the product of n independent and identically
 %        distributed uniform [a,b] random variables X_{i}, i=1,2..n, takes on a value
 %        less than or equal to tau.
+
+
+%¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
+%                          c) Michel Bellis                                                %
+%                          michel.bellis@crbm.cnrs.fr                                      %
+%            Affiliation:  CNRS (Centre National de la Recherche Scientifique - France)    %                               
+%  Bioinformatic Project:  ARRAYMATIC => http://code.google.com/p/arraymatic               %
+%        Code Repository:  GITHUB => http://github.com/mbellis                             %
+%¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
+
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
+%  THIS CODE IS DISTRIBUTED UNDER THE CeCILL LICENSE, WHICH IS COMPATIBLE WITH       %
+%  THE GNU GENERAL PUBLIC LICENCE AND IN ACCORDANCE WITH THE EUROPEAN LEGISLATION.   %
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
 
 
 function [PpvList,PpvCdf]=produniform(ProdNb)

@@ -1,23 +1,33 @@
-%&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-% FUNCTION make_monotonous
-%&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FUNCTION MAKE_MONOTONOUS %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% make a vector of values monotonous either by keeping
-% the last greatest or last smallest value
+% MAKE_MONOTONOUS makes a vector of values monotonous either by keeping
+% the last greatest or last smallest value.
+% Outliers are eliminated before by a simple procedure (deviation from mean local value).
 
-%INPUT PARAMETERS
-%1- Val : values that must be rendered monotonous
-%2- Type : either inc (monotonous increasing) or dec (monotonous decreasing)
-%3- FlipFlag : if ==1 flip the data before making them monotonous
+% INPUT PARAMETERS
+% 1      Val : values that must be rendered monotonous
+% 2     Type : either inc (monotonous increasing) or dec (monotonous decreasing)
+% 3 FlipFlag : if ==1 flip the data before making them monotonous
 
 
-%OUTPUT PARAMETERS
-%1- Val : values made monotonous
+% OUTPUT PARAMETERS
+% 1 Val : values made monotonous
 
-%VERSIONS
-% V03 25-07-2010 Detect outliers
-% V02 14-04-2010 Add FlipFlag
-% V01 22-03-2010 Refactorinf of the existing version
+
+%¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
+%                          c) Michel Bellis                                                %
+%                          michel.bellis@crbm.cnrs.fr                                      %
+%            Affiliation:  CNRS (Centre National de la Recherche Scientifique - France)    %                               
+%  Bioinformatic Project:  ARRAYMATIC => http://code.google.com/p/arraymatic               %
+%        Code Repository:  GITHUB => http://github.com/mbellis                             %
+%¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
+
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
+%  THIS CODE IS DISTRIBUTED UNDER THE CeCILL LICENSE, WHICH IS COMPATIBLE WITH       %
+%  THE GNU GENERAL PUBLIC LICENCE AND IN ACCORDANCE WITH THE EUROPEAN LEGISLATION.   %
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
 
 
 function Val=make_monotonous (Val,Type,varargin)
