@@ -1,6 +1,6 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%==============================
 % FUNCTION NOISE_DISTRIBUTION %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%==============================
 
 % NOISE_DISTRIBUTION calculates noise distribution:
 % The distribution of the variation between two series of rank values (one called a baseline (BL)

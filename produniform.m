@@ -1,6 +1,6 @@
-%%%%%%%%%%%%%%%%%%%%%%%%
+%=======================
 % FUNCTION PRODUNIFORM %
-%%%%%%%%%%%%%%%%%%%%%%%%
+%=======================
 
 % PRODUNIFORM calculates the product of several independant uniform random variables.
 

@@ -1,6 +1,6 @@
-%%%%%%%%%%%%%%%%%
+%================
 % FUNCTION RDAM %
-%%%%%%%%%%%%%%%%%
+%================
 
 % RDAM implements Rank Difference Analysis of Microarray algorithm:
 % Find which variations are statistically significative when comparing two groups

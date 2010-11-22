@@ -1,6 +1,6 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%===========================
 % FUNCTION MAKE_MONOTONOUS %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%===========================
 
 % MAKE_MONOTONOUS makes a vector of values monotonous either by keeping
 % the last greatest or last smallest value.

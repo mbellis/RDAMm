@@ -1,6 +1,6 @@
-%%%%%%%%%%%%%%%%%%%%%%
+%=====================
 % CUMUL_DISTRIBUTION %
-%%%%%%%%%%%%%%%%%%%%%%
+%=====================
 
 % CUMUL_DISTRIBUTION calculates a cumulative frequency distribution.
 

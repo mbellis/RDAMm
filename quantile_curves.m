@@ -1,6 +1,6 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%===========================
 % FUNCTION QUANTILE_CURVES %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%===========================
 
 % QUANTILE_CURVES calculates quantile curves:
 %Variations (rank differences) are sorted according to the rank to which they correspond.

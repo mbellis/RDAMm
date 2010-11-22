@@ -1,6 +1,6 @@
-%%%%%%%%%%%%%%%%
+%===============
 % FUNCTION FDR %
-%%%%%%%%%%%%%%%%
+%===============
 
 % FDR calculates fdr and sensitivity.
 
