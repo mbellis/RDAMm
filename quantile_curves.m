@@ -289,21 +289,27 @@ if DisplayFlag==1
     if isequal(CalibType,'quantile')
         Colors='bgmkcrbgmkcrb';
         h1=figure;
+        set(gcf,'color',[1,1,1])
+        set(h1,'name','RAW PERCENTILE CURVES')
         subplot(2,2,1)
         hold on
         for PercL=1:PercNb
             plot(0:100/(length(OutputRes.perc(:,PercL))-1):100,OutputRes.perc(:,PercL),Colors(PercL))
         end
+        set(gca,'box','on')
         title('raw percentile curves')
         xlabel('rank')
         ylabel('percentile of variations')
     end
 
     h2=figure;
-    subplot(2,2,1)
+    set(gcf,'color',[1,1,1])
+    subplot(2,2,1)    
+    set(h2,'name','RAW MEAN AND STD CURVES')
     hold on
     plot(0:100/(length(OutputRes.mean)-1):100,OutputRes.mean,'g')
     plot(0:100/(length(OutputRes.std)-1):100,OutputRes.std,'b')
+    set(gca,'box','on')
     title('raw mean (g) and std (b) curves')
     xlabel('rank')
     ylabel('percentile of variations')
@@ -354,6 +360,7 @@ if DisplayFlag==1
             plot(RankGrid,Grid.perc{PercL}(:,3),[Colors(PercL),':'])
             plot(RankGrid,Grid.perc{PercL}(:,4),[Colors(PercL),'-'])
         end
+        set(gca,'box','on')
         title('smoothed percentile curves (3(..)&4(-))')
         xlabel('rank')
         ylabel('percentile of variations')
@@ -364,6 +371,7 @@ if DisplayFlag==1
     hold on
     plot(RankGrid,Grid.mean,'g')
     plot(RankGrid,Grid.std,'b')
+    set(gca,'box','on')
     title('smoothed mean (g) and std (b) curves')
     xlabel('rank')
     ylabel('percentile of variations')
@@ -556,6 +564,7 @@ if ~isempty(CurrPercPos)
             %plot variations of ranks > 90
             a=find(Rank>90);
             plot(Rank(a),Var(a),'k.','markersize',3)
+            set(gca,'box','on')
             title('composit percentile curves')
             xlabel('rank')
             ylabel('percentile of variations')
@@ -568,6 +577,7 @@ if ~isempty(CurrPercPos)
         %plot variations of ranks > 90
         a=find(Rank>90);
         plot(Rank(a),Var(a),'k.','markersize',3)
+        set(gca,'box','on')
         title('composit mean and std curves')
         xlabel('rank')
         ylabel('percentile of variations')
@@ -599,6 +609,7 @@ if ~isempty(CurrPercPos)
             end
             a=find(Rank>90);
             plot(Rank(a),Var(a),'k.','markersize',3)
+            set(gca,'box','on')
             title('corrrected composit percentile curves')
             xlabel('rank')
             ylabel('percentile of variations')
@@ -612,6 +623,7 @@ if ~isempty(CurrPercPos)
         %plot variations of ranks > 90
         a=find(Rank>90);
         plot(Rank(a),Var(a),'k.','markersize',3)
+        set(gca,'box','on')
         title('corrected composit mean and std curves')
         xlabel('rank')
         ylabel('percentile of variations')

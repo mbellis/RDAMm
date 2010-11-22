@@ -79,7 +79,9 @@ UCumulDist=FCumulDist;
 UCumulDist(DoublonIndex)=[];
 
 if DisplayFlag==1
-   figure
+   h=figure;
+   set(gcf,'color',[1,1,1])
+   set(h,'name','CUMULATIVE DISTRIBUTION')
    hold on
    plot(SortedUValues,UCumulDist,'b+');
    FittedCumulDisp=interp1(SortedUValues,UCumulDist,[MinValue:0.1:MaxValue],'linear');

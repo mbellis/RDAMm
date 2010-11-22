@@ -74,7 +74,7 @@
 %                          CGRankList and the real position in S (used when P.flag.loadData==1 to
 %                          allow a correct selection of calibration set)
 %     
-%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam({[1,19;2,19]},[1:19],[1:19],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,0,0,1,0);
+%[ZVar,Pv,Ppv,Fdr,Sensitivity,TotalVar]=rdam({[1,2;1,2];[1,2;2,1]},[1,2],[3,4],0,[0,0],'idem',[],'quantile','transcriptome',7,0,0,0,1,0,0,1,0);
 
 % VARARGIN PARAMETERS
 % if SingleCalibPointFlag==1: HLCalibRank = varargin{1} & CGCalibRank = varargin{2} indicates the ranks of points that are
@@ -523,7 +523,9 @@ for RoundL=1:RoundNb
         end
         if DisplayFlag==1 && RoundL==2
 
-            figure
+            h=figure;
+            set(gcf,'color',[1,1,1])
+            set(h,'name','REPRODUCIBILITY')
             IncIndex=ZVar(:,1)>0;
             DecIndex=ZVar(:,1)<0;
             subplot(2,2,1)
@@ -583,6 +585,8 @@ if ComparisonFlag==1
     MeanCompNb=round(mean(CompNb));
     if DisplayFlag==1
         h=figure;
+        set(gcf,'color',[1,1,1])
+        set(h,'name','ABACCUS')
         plot(ZVar,abs(Ppv(:,1)),'k+','markersize',3)
         hold on
         plot(ZVar,abs(Pv(:,1)),'g+','markersize',3)
@@ -610,8 +614,8 @@ end
 function [HL,BL]=getdata(HLRank,BLRank,LoadDataFlag)
 global DataRanks P
 if LoadDataFlag==1
-    HL=load_data('Dataranks.float32le',P.dir.data,P.chip.currProbeSetNb,P.point.nb,'single','ieee-le',1:P.chip.currProbeSetNb,HLRank);
-    BL=load_data('Dataranks.float32le',P.dir.data,P.chip.currProbeSetNb,P.point.nb,'single','ieee-le',1:P.chip.currProbeSetNb,BLRank);
+    HL=load_data('DataRanks.float32le',P.dir.data,P.chip.currProbeSetNb,P.point.nb,'single','ieee-le',1:P.chip.currProbeSetNb,HLRank);
+    BL=load_data('DataRanks.float32le',P.dir.data,P.chip.currProbeSetNb,P.point.nb,'single','ieee-le',1:P.chip.currProbeSetNb,BLRank);
 else
     HL=DataRanks(:,HLRank);
     BL=DataRanks(:,BLRank);
@@ -722,7 +726,9 @@ InterpPpv=InterpPpv(Index);
 %BestPpv is the product of ppv in case of perfect reproducibility (Zvar are the same in all the comparisons)
 % => BestPpv=Pv^CompNb
 if DisplayFlag==1
-    figure
+    h=figure;
+    set(gcf,'color',[1,1,1])
+    set(h,'name','PV^COMPNB')
     hold on
     for CompL=1:min(CompNb,length(P.tmp.color))
     plot(ZVar(:,CompL),log10(Pv(:,CompL).^2),sprintf('%c.',P.tmp.color(CompL)),'markersize',3)
@@ -900,7 +906,9 @@ IncBindex=ZVar>0;
 DecBindex=ZVar<0;
 
 if DisplayFlag==1
-    figure
+    h=figure;
+    set(gcf,'color',[1,1,1])
+    set(h,'name','CORRECTIONS')
     subplot(1,2,1)
     plot(ZVar,log10(MeanPpv),'b+')
     hold on
@@ -926,6 +934,7 @@ for TrendL=1:2
         CurrPpv=Ppv(CurrBindex);
         if DisplayFlag==1
             h=figure;
+            set(gcf,'color',[1,1,1])
             set(h,'name','CALIBRATION CURVES')
         else
             h=0;

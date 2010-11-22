@@ -81,15 +81,6 @@ end
 % True positive are the difference between observed and expected
 TpFreq=PpvCdf-PpvPv;
 
-% figure
-% plot(1./Ppv,(1-PpvCdf)./(1-PpvPv),'b')
-% hold on
-% plot(1./Ppv,TpFreq,'r')
-% plot(1./Ppv, PpvCdf - ((1-PpvCdf)./(1-PpvPv)).*PpvPv,'g')
-% plot(1./Ppv, (PpvCdf - ((1-PpvCdf)./(1-PpvPv)).*PpvPv)./TpFreq,'m')
-% line([1,0.001],[0,0],'color','k')
-% line([1,0.001],[1,1],'color','k')
-
 % difference between Obs and Ho are highly significant for low value of Ho
 % when computing TpFreq, starting from low value of Ho, TpFreq can't decrease
 MTpFreq=make_monotonous(TpFreq,'inc');
@@ -98,13 +89,11 @@ TpNb=MTpFreq*DataNb;
 
 % True positive can't be negative
 NegIndex=find(TpNb<0);
- if ~isempty(NegIndex)
-%     warndlg(['Exist ',sprintf('%.f',size(NegIndex,1)),' negative nb of Tp'],'STAT_CALIB_PREV')
-     %%%MTpFreq(NegIndex)=0;
-     TpNb(NegIndex)=0;
- end
+if ~isempty(NegIndex)
+    TpNb(NegIndex)=0;
+end
 
-%Find the  
+%Find the
 StartPos=1;
 EndPos=DataNb; 
 FoundMax=0;
@@ -114,20 +103,17 @@ while FoundMax==0
     TruePosNb=max(TpNb(StartPos:EndPos));
     %TruePosNb=max(TpNb);
     if ~isempty(TruePosNb)
-        %TruePosNb=TruePosNb(1);    
+        %TruePosNb=TruePosNb(1);
         if TruePosNb>0
             TpMaxNbPos=find(TpNb>=TruePosNb);
             FirstTpMaxNbPos=TpMaxNbPos(1);
-            LastTpMaxNbPos=TpMaxNbPos(end);
         else
             FoundMax=1;
-            FirstTpMaxNbPos=1;
-            LastTpMaxNbPos=1;
+            FirstTpMaxNbPos=1;         
         end
     else
         FoundMax=1;
         FirstTpMaxNbPos=1;
-        LastTpMaxNbPos=1;
     end
     
     % refine the estimation of TP by convergence procedure 
@@ -145,11 +131,8 @@ while FoundMax==0
     
     TpFreq=PpvCdf-Alpha.*PpvPv;
     MTpFreq=make_monotonous(TpFreq,'inc');
-    %NewTpNb=TpFreq(FirstTpMaxNbPos)*DataNb;
-    %NewTpNb=TpFreq*DataNb;
     NewTpNb=MTpFreq*DataNb;
     if TpNb(FirstTpMaxNbPos)>0
-        %TpRatio=NewTpNb/TpNb(FirstTpMaxNbPos);
         TpRatio=NewTpNb(FirstTpMaxNbPos)/TpNb(FirstTpMaxNbPos);
     else
         TpRatio=1;
@@ -188,12 +171,8 @@ while FoundMax==0
         NextPos=find(NegSlopeIndex<FirstTpMaxNbPos);
         if ~isempty(NextPos)
             EndPos=NegSlopeIndex(NextPos(end));
-%             plot(10.^InterpXData(EndPos),SmoothTpFreq(EndPos),'mo')
-%             plot(10.^InterpXData(EndPos),SmoothTpFreq(EndPos),'m+')
         else
             FoundMax=1;
-            FirstTpMaxNbPos=1;
-            LastTpMaxNbPos=1;
         end    
     end
 end % of while FoundMax==0 
@@ -221,58 +200,27 @@ if ~isempty(TruePosNb)
     if TruePosNb>0
         TpMaxNbPos=find(TpNb>=TruePosNb);
         FirstTpMaxNbPos=TpMaxNbPos(1);
-        LastTpMaxNbPos=TpMaxNbPos(end);
     else
         FirstTpMaxNbPos=1;
-        LastTpMaxNbPos=1;
     end
 else
     FirstTpMaxNbPos=1;
-    LastTpMaxNbPos=1;
 end
 
 
 TruePosNb=TpNb(FirstTpMaxNbPos);
 TpNb(FirstTpMaxNbPos:end)=TruePosNb;
-%}}}
-%>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-
-%<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-%{{{ Estimation of false positive FpNb
-
-% estimated False Positive Number
+% Estimation of false positive FpNb
 FpNb=(PpvCdf*DataNb)-TpNb;
 
-%FpNb(LastTpMaxNbPos:end)=(PpvCdf(LastTpMaxNbPos:end)*DataNb)-TruePosNb;
-
-% should not exist
-%Correction_index=find(FpNb>TnMaxNb);
-%size(Correction_index)
-%FpNb(Correction_index)=TnMaxNb;
-%}}}
-%>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-%<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-%{{{ Estimation of false negative FnNb
+% Estimation of false negative FnNb
 FnNb=TruePosNb-TpNb;
-% should not exist
-%Correction_index=find(FnNb>TruePosNb);
-%size(Correction_index)
-%FnNb(Correction_index)=TruePosNb;
-%}}}
-%>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-%<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-%{{{ Estimation of true negative TnNb
+% Estimation of true negative TnNb
 TnNb=DataNb-(TpNb+FnNb+FpNb);
-%Correction_index=find(TnNb>TnMaxNb);
-%TnNb(Correction_index)=TnMaxNb;
-%}}}
-%>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-%<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-%{{{ Correction of limit value (0,1)
+% Correction of limit value (0,1)
 CorrFpNb=FpNb;
 CorrTpNb=TpNb;
 CorrFnNb=FnNb;
@@ -287,22 +235,13 @@ CorrFnNb(ZeroIndex)=eps;
 ZeroIndex=find(TnNb==0);
 CorrTnNb(ZeroIndex)=eps;
 
-%}}}
-%>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-%<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-%{{{ Estimation of statistical parameters (FDR, FNR, Sensitivity, Specificity, Chi2)
+% Estimation of statistical parameters (FDR, FNR, Sensitivity, Specificity, Chi2)
 
 FDR=FpNb./(CorrFpNb+CorrTpNb);            
 FDR(FDR>1)=1;
 FDR(FDR<0)=0;
-
-FNR=FnNb./(CorrFnNb+CorrTnNb);
-FNR(FNR>1)=1;
-FNR(FNR<0)=0;
-%Fdr=make_monotonous(FDR,'inc');
 Fdr=make_monotonous(FDR,'dec',1);
-Fnr=make_monotonous(FNR,'dec');
 
 Fdr10pc=Fdr>=0.10;
 if ~isempty(find(Fdr10pc))
@@ -326,81 +265,41 @@ SENS=TpNb./(PositiveNb);
 SENS(SENS>1)=1;
 Sensitivity=make_monotonous(SENS,'inc');
 
-NegativeNb=TnNb+FpNb;
-ZeroIndex=find(NegativeNb==0);
-NegativeNb(ZeroIndex)=eps;
-SPEC=TnNb./(NegativeNb);            
-% Same correction but very much more improbable (TnNb = zero)
-SPEC(SPEC>1)=1;
-Specificity=make_monotonous(SPEC,'dec');
-
 
 %GRAPHICS
 if DisplayFlag==1
-%     figure(FigH)   
-%     set(FigH,'name',Title)    
-%     subplot(1,2,SubPos)    
-%     if SubPos==1       
-%         title('FDR(-), Sensitivity(..), cdf((ppv)|Ho)(black -) and cdf(ppv)(--)')    
-%         xlabel(sprintf('Inc: %.f    log(1/product of the plevels)',TruePosNb))
-%     else
-%         xlabel(sprintf('Dec: %.f    log(1/product of the plevels)',TruePosNb))
-%     end
-%     set(gca,'xscale','log')
-%     set(gca,'box','on')    
-%     hold on   
-%     %  
-%     % expected cdf of Ppv under Ho hypothesis
-%     plot(1./Ppv,PpvPv,'k-');
-%     plot(1./Ppv,PpvPvMem,'k:');
-%     
-%     % observed cdf of Ppv
-%     eval(['plot(1./Ppv,PpvCdf,''',CurrColor,'--'');']);   
-%     
-%     % indicates the position of TP max nb    
-%     plot(1./Ppv(FirstTpMaxNbPos),PpvCdf(FirstTpMaxNbPos),sprintf('%co',CurrColor))
-%     plot(1./Ppv(FirstTpMaxNbPos),PpvCdf(FirstTpMaxNbPos),sprintf('%c+',CurrColor))
-%     line([1./Ppv(FirstTpMaxNbPos),1./Ppv(FirstTpMaxNbPos)],[0,Fdr(FirstTpMaxNbPos)],'color',CurrColor)
-%     line([1,1./Ppv(FirstTpMaxNbPos)],[Fdr(FirstTpMaxNbPos),Fdr(FirstTpMaxNbPos)],'color',CurrColor)    
-%    line([1./Ppv(Fdr10pc),1./Ppv(Fdr10pc)],[0,Sensitivity(Fdr10pc)],'color',CurrColor,'linestyle',':')
-%    line([1,1./Ppv(Fdr10pc)],[Sensitivity(Fdr10pc),Sensitivity(Fdr10pc)],'color',CurrColor,'linestyle',':')
-%           
-%     % Fdr & Sensibility
-%     plot(1./Ppv,Fdr,sprintf('%c-',CurrColor))
-%     plot(1./Ppv,Sensitivity,sprintf('%c:',CurrColor))
-%     
-    figure(FigH)   
+    figure(FigH)
     subplot(1,2,SubPos)
-    hold on   
-    if SubPos==1                     
+    hold on
+    if SubPos==1
         Label=sprintf('zVar of Inc (%.f)',TruePosNb);
         CurrColor='r';
-        title('                                                             FDR(-), Sensitivity(..), cdf((ppv)|Ho)(black -) and cdf(ppv)(--)')    
+        title('                                                             FDR(-), Sensitivity(..), cdf((ppv)|Ho)(black -) and cdf(ppv)(--)')
     else
         Label=sprintf('zVar of Dec (%.f)',TruePosNb);
         CurrColor='b';
-    end    
-    %  
+    end
+   
     % expected cdf of Ppv under Ho hypothesis
     plot(ZVar,PpvPv,'k-');
     plot(ZVar,PpvPvMem,'k:');
-    
+
     % observed cdf of Ppv
-    eval(['plot(ZVar,PpvCdf,''',CurrColor,'--'');']);   
-    
-    % indicates the position of TP max nb    
+    eval(['plot(ZVar,PpvCdf,''',CurrColor,'--'');']);
+
+    % indicates the position of TP max nb
     plot(ZVar(FirstTpMaxNbPos),PpvCdf(FirstTpMaxNbPos),sprintf('%co',CurrColor))
     plot(ZVar(FirstTpMaxNbPos),PpvCdf(FirstTpMaxNbPos),sprintf('%c+',CurrColor))
     line([ZVar(FirstTpMaxNbPos),ZVar(FirstTpMaxNbPos)],[0,Fdr(FirstTpMaxNbPos)],'color',CurrColor)
-    line([1,ZVar(FirstTpMaxNbPos)],[Fdr(FirstTpMaxNbPos),Fdr(FirstTpMaxNbPos)],'color',CurrColor)    
-   line([ZVar(Fdr10pc),ZVar(Fdr10pc)],[0,Sensitivity(Fdr10pc)],'color',CurrColor,'linestyle',':')
-   line([1,ZVar(Fdr10pc)],[Sensitivity(Fdr10pc),Sensitivity(Fdr10pc)],'color',CurrColor,'linestyle',':')
-          
+    line([1,ZVar(FirstTpMaxNbPos)],[Fdr(FirstTpMaxNbPos),Fdr(FirstTpMaxNbPos)],'color',CurrColor)
+    line([ZVar(Fdr10pc),ZVar(Fdr10pc)],[0,Sensitivity(Fdr10pc)],'color',CurrColor,'linestyle',':')
+    line([1,ZVar(Fdr10pc)],[Sensitivity(Fdr10pc),Sensitivity(Fdr10pc)],'color',CurrColor,'linestyle',':')
+
     % Fdr & Sensibility
     plot(ZVar,Fdr,sprintf('%c-',CurrColor))
     plot(ZVar,Sensitivity,sprintf('%c:',CurrColor))
-    
-    set(gca,'box','on')    
+
+    set(gca,'box','on')
     xlabel(Label)
     set(gcf,'color',[1,1,1])
 end

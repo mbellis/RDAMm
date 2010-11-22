@@ -178,6 +178,8 @@ if DisplayFlag==1
     Colors='bgmkcrbgmkcrb';
     %plot Var vs Rank & percentile lines
     h1=figure;
+    set(gcf,'color',[1,1,1])
+    set(h1,'name','DISTRIBUTION OF RANK DIFF')
     subplot(1,2,1)
     hold on
     if isequal(AnalyseType,'chipchip')
