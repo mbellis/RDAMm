@@ -93,7 +93,6 @@
 
 % GLOBAL VARIABLES
 % DataRanks contains data ranks (if LoadDataFlag==1,  DataRanks is empty)
-% K contains directory names
 % P contains metadata (P.point : description of points, P.biol: description of biological conditions ...)
 % S contains calibration sets
 
@@ -521,7 +520,7 @@ for RoundL=1:RoundNb
             Pv(:,RoundL)=CurrPv;
             Ppv(:,RoundL)=abs(CurrPv);
         end
-        if DisplayFlag==1 && RoundL==2
+        if DisplayFlag==1 && RoundL==2 && LoadDataFlag==0
 
             h=figure;
             set(gcf,'color',[1,1,1])
@@ -529,10 +528,10 @@ for RoundL=1:RoundNb
             IncIndex=ZVar(:,1)>0;
             DecIndex=ZVar(:,1)<0;
             subplot(2,2,1)
-            plot(DataRanks(:,1)-DataRanks(:,3),DataRanks(:,2)-DataRanks(:,4),'k.','markersize',3)
+            plot(DataRanks(:,HLRanks(1))-DataRanks(:,BLRanks(1)),DataRanks(:,HLRanks(2))-DataRanks(:,BLRanks(2)),'k.','markersize',3)
             hold on
-            plot(DataRanks(IncIndex,1)-DataRanks(IncIndex,3),DataRanks(IncIndex,2)-DataRanks(IncIndex,4),'r.','markersize',3)
-            plot(DataRanks(DecIndex,1)-DataRanks(DecIndex,3),DataRanks(DecIndex,2)-DataRanks(DecIndex,4),'b.','markersize',3)
+            plot(DataRanks(IncIndex,HLRanks(1))-DataRanks(IncIndex,BLRanks(1)),DataRanks(IncIndex,HLRanks(2))-DataRanks(IncIndex,BLRanks(2)),'r.','markersize',3)
+            plot(DataRanks(DecIndex,HLRanks(1))-DataRanks(DecIndex,BLRanks(1)),DataRanks(DecIndex,HLRanks(2))-DataRanks(DecIndex,BLRanks(2)),'b.','markersize',3)
             set(gca,'xlim',[-50,50])
             set(gca,'ylim',[-50,50])
             ylabel('rank(HL2)-rank(BL2)')
@@ -540,7 +539,7 @@ for RoundL=1:RoundNb
             title('reproducibility of rank difference')
 
             subplot(2,2,2)
-            plot(ZVar(:,1),ZVar(:,2),'k.','markersize',3)
+            plot(ZVar(:,1),ZVar(:,2),'k.','markersize',BLRanks(1))
             hold on
             plot(ZVar(IncIndex,1),ZVar(IncIndex,2),'r.','markersize',3)
             plot(ZVar(DecIndex,1),ZVar(DecIndex,2),'b.','markersize',3)
@@ -565,12 +564,12 @@ for RoundL=1:RoundNb
             title('Pv(Ppv)=f(ZVar) is monotonous')
 
             subplot(2,2,4)
-            plot(DataRanks(:,1)-DataRanks(:,3),ZVar(:,1),'k.','markersize',3)
             hold on
-            plot(DataRanks(IncIndex,1)-DataRanks(IncIndex,3),ZVar(IncIndex(IncIndex,1)),'r.','markersize',3)
-            plot(DataRanks(DecIndex,1)-DataRanks(DecIndex,3),ZVar(DecIndex(DecIndex,1)),'b.','markersize',3)
+            plot(DataRanks(IncIndex,HLRanks(1))-DataRanks(IncIndex,BLRanks(1)),ZVar(IncIndex,1),'r.','markersize',3)
+            plot(DataRanks(DecIndex,HLRanks(1))-DataRanks(DecIndex,BLRanks(1)),ZVar(DecIndex,1),'b.','markersize',3)
             xlabel('rank(HL1)-rank(BL1)')
             ylabel('ZVar of HL1vsBL1 & HL2vsBL2')
+            set(gca,'box','on')
             set(gca,'xlim',[-50,50])
             set(gca,'ylim',[-50,50])
             title('some low rank differences are reassigned (inc<=>dec)')
@@ -581,7 +580,6 @@ end %of RoundL
 if ComparisonFlag==1
     %normally each round has the same number of comparisons
     %take the mean over all rounds in case it is not true
-    DisplayFlag=0;
     MeanCompNb=round(mean(CompNb));
     if DisplayFlag==1
         h=figure;
@@ -600,8 +598,8 @@ if ComparisonFlag==1
         plot(ZVar,abs(Sensitivity),'m.')
         set(gcf,'color',[1,1,1])
         xlabel('ZVar')
-        ylabel('k&c:Ppv, g&y;Pv, r:Fdr, m:S')
-        title('statitists on ZVar')
+        ylabel('black & cyan: Ppv, green & yellow: Pv, red: Fdr, magenta: Sensitivity')
+        title('statitics on ZVar')
     end
     
 end
@@ -774,6 +772,8 @@ if DisplayFlag==1
         line([P.tmp.zvartest(i,2),ZVar(P.tmp.deczeroindex(P.tmp.test(i)))],[log10(P.tmp.ppvtest(i,2)),log10(Ppv(P.tmp.deczeroindex(P.tmp.test(i))))],'color',P.tmp.color(i),'linestyle',':')
     end
     set(gca,'xlim',[-50,50])
+    
+    set(gca,'box','on')
     xlabel('mean(ZVar)')
     ylabel('log10(Ppv)')
     title('Correction of Ppv=f(ZVar) and discrepencies between comparisons')
@@ -925,8 +925,7 @@ if DisplayFlag==1
     ylabel('final p-value of ppv')
     title('correction of p-values (blue (green) before (after) correction)')
 end
-%forces to display Fdr, Sensitivity curves
-%DisplayFlag=1;
+
 TotalVar=zeros(1,2);
 for TrendL=1:2
     if TrendL==1

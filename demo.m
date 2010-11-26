@@ -1,11 +1,17 @@
-%=======
-% DEMO %
-%=======
+%================
+% FUNCTION DEMO %
+%================
 
 % DEMO run a demonstration
 % demo must be run from inside the main directory:
 % 'cd .../RDAMm/'
 % 'demo'
+%
+% GLOBAL VARIABLES
+% DataRanks contains data ranks (if LoadDataFlag==1,  DataRanks is empty)
+% P contains metadata (P.point : description of points, P.biol: description of biological conditions ...)
+% S contains calibration sets
+
 
 % comment/uncomment lines to test different combination of parameters as indicated
 
@@ -23,6 +29,7 @@
 %  THIS CODE IS DISTRIBUTED UNDER THE CeCILL LICENSE, WHICH IS COMPATIBLE WITH       %
 %  THE GNU GENERAL PUBLIC LICENCE AND IN ACCORDANCE WITH THE EUROPEAN LEGISLATION.   %
 %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
+function demo()
 global DataRanks P S 
 
 RootDir=pwd;
@@ -44,7 +51,7 @@ DataDir=fullfile(RootDir,'data');
 %load global variable
 cd(DataDir)
 load global
-if exist('CalibSet_01.mat','file')
+if exist(fullfile(DataDir,'CalibSet_01.mat'),'file')
     load CalibSet_01
 else
     S=[];
@@ -52,8 +59,8 @@ end
 P.dir.data=DataDir;
     
 CompScheme={[1,2;1,2];[1,2;2,1]};
-TGRankList= [1,2];
-CGRankList=[3,4];
+TGRankList= [2,3];
+CGRankList=[4,5];
 LoadDataFlag=1;
 RankThreshold=[0,0];
 CalibType='idem';
@@ -70,10 +77,12 @@ ComparisonFlag=1;
 ResRank=1;
 CalibSchemeFlag=0;
 
-if LoadDataFlag
+if LoadDataFlag==0
     cd(DataDir)
     load DataRanks
     cd(RootDir)
+else
+    DataRanks=[];
 end
 
 
@@ -82,23 +91,4 @@ end
     RankThreshold,CalibType,ClearIndex,NormType,AnalyseType,SizerFittingDegrees,SingleCalibPointFlag,...
     SingleCalibCurveFlag,CalibUpdateFlag,CalibSaveFlag,DisplayFlag,ComparisonFlag,ResRank,CalibSchemeFlag);
 
-h=figure;
-set(gcf,'color',[1,1,1])
-set(h,'name','RESULTS')
-subplot(1,2,1)
-plot(ZVar,-(-log10(Pv)),'g.')
-hold on
-plot(ZVar,-(-log10(Ppv)),'y.')
-set(gca,'box','on')
-title('Pv and Ppv')
-xlabel('ZVar')
-ylabel('log10 of Pv (green) and Ppv (yellow)')
-subplot(1,2,2)
-plot(ZVar,Fdr,'r.')
-hold on
-plot(ZVar,Sensitivity,'m.')
-set(gca,'box','on')
-title('Fdr and Sensitivity')
-xlabel('ZVar')
-ylabel('Fdr (red) and Sensitivity (magenta)')
 

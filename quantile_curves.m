@@ -361,7 +361,7 @@ if DisplayFlag==1
             plot(RankGrid,Grid.perc{PercL}(:,4),[Colors(PercL),'-'])
         end
         set(gca,'box','on')
-        title('smoothed percentile curves (3(..)&4(-))')
+        title('smoothed percentile curves (3(..) & 4(-))')
         xlabel('rank')
         ylabel('percentile of variations')
     end

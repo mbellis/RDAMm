@@ -199,8 +199,8 @@ if DisplayFlag==1
         plot(RankGrid,Grid.std,'b')
     end
     set(gca,'box','on')
-    xlabel('Rank(Test)')
-    ylabel('RankDiff = Rank(Control)-Rank(Test)|')
+    xlabel('min(rank(Replicate 1),rank(Replicate 2))')
+    ylabel('RankDiff = Rank(Replicate 2)-Rank(Replicate 1)')
     title(sprintf('%s: Distribution of Rank Diff',CalibName))
 end
 
@@ -263,10 +263,10 @@ if DisplayFlag==1
         plot(FRank,ZVar,'r.','markersize',3);
     else
         plot(FRank(IncIndex),ZVar(IncIndex),'r.','markersize',3);
-        plot(FRank(DecIndex),ZVar(DecIndex),'b.','markersize',3);
+        plot(FRank(DecIndex),-ZVar(DecIndex),'b.','markersize',3);
     end
     set(gca,'box','on')
-    xlabel('Rank(Test)')
+    xlabel('min(rank(Replicate 1),rank(Replicate 2))')
     if isequal(NormType,'quantile')
         ylabel('quantile normalised Rank Diff')
         title(sprintf('%s: Distribution of Quantile Normalized RD',CalibName))
