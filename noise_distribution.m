@@ -1,62 +1,70 @@
 %==============================
-% FUNCTION NOISE_DISTRIBUTION %
+% FUNCTION NOISE_DISTRIBUTION 
 %==============================
-
+%
 % NOISE_DISTRIBUTION calculates noise distribution:
 % The distribution of the variation between two series of rank values (one called a baseline (BL)
 % and the other called a highline (HL)) is computed
-% The units used for representing the variation  is the difference between the ranks of values (rank diff)
-% The script allows to compute the values of the variation unit for which there is a predetermined percentage
-%(threshold of 10%, 3% and 1%) of points with a greater variability : these are the calibration curves of the
-% percentiles (or fractiles)
-% These curves which are irregular, because they are obtained by computing the points in a sliding window,
-% are smoothed by interpolation (spline)
-
+% The units used for representing the variation  is the difference between the ranks of values 
+% (rank diff)
+% The script allows to compute the values of the variation unit for which there is a predetermined
+% percentage (threshold of 10, 3 and 1) of points with a greater variability : these are the 
+% calibration curves of the percentiles (or fractiles)
+% These curves which are irregular, because they are obtained by computing the points in a sliding
+% window, are smoothed by interpolation (spline)
+% 
 % INPUT PARAMETERS
-% 1             HLValues: the highline values
-% 2             BLValues: the baseline values
-% 3        RankThreshold: a vector of two values allowing to start the process of constructing quantile curves using
-%                           a defined range of rank values (>=RankThreshold(1)&<=RankThreshold(2))
-% 4               HLRank: the rank of point used as highline
-% 5               BLRank: the rank of point used as baseline
-% 6           ClearIndex: allow to clear some points from the points used in the calibration process
-% 7             NormType: either 'standardization' (original method in RDAM = var - mean /std)
-%                         or 'quantile' (more general method based on percentile curves)
-% 8         AnalyseType : either 'transcriptome' or 'chipchip' (some parameters have to be adapted to the type of analysis)
-% 9            CalibType: the type of data, either
-%                         up or down: distinct biological conditions
-%                         up: only the values which are increased in the HL vs BL comparison are used
-%                         down: only the values which are decreased in the HL vs BL comparison are used
-%                               used for chiphip analysis type
-%                               and for biological conditions without replicates
-%                         idem: replicates of the same biological condition
-%                               [HL,BL] is compared to [BL,HL] (no distinction between increased and decreased distribution which should be equal)
-% 10 SizerFittingDegrees: used by sizer (the procedure of curve smoothing).Indicates the number of increasing fitting degrees used
-% 11         DisplayFlag: indicates if figures must be drawn or not
-
-%OUTPUT PARAMETERS
-% 1 RankGrid: sampling range of ranks [0.25:0.25:100]
-% 2     Grid: smoothed variation curves corresponding to RankGrid
-% 3 ZVarGrid: Normalized variations used for 2-D interpolation
-% 4     ZVar: normalized variations (ZVar=interp2(RankGrid,VarGrid,ZVarGrid,Rank,Var))
-
+%  1             HLValues: the highline values
+%  2             BLValues: the baseline values
+%  3        RankThreshold: a vector of two values allowing to start the process of constructing 
+%                          quantile curves using a defined range of rank values 
+%                          (>=RankThreshold(1)&<=RankThreshold(2))
+%  4               HLRank: the rank of point used as highline
+%  5               BLRank: the rank of point used as baseline
+%  6           ClearIndex: allow to clear some points from the points used in the calibration
+%                          process
+%  7             NormType: either 'standardization' (original method in RDAM = var - mean /std)
+%                          or 'quantile' (more general method based on percentile curves)
+%  8         AnalyseType : either 'transcriptome' or 'chipchip' (some parameters have to be 
+%                          adapted to the type of analysis)
+%  9            CalibType: the type of data, either
+%                          up or down: distinct biological conditions
+%                          up: only the values which are increased in the HL vs BL comparison 
+%                              are used
+%                          down: only the values which are decreased in the HL vs BL comparison
+%                                are used
+%                                used for chiphip analysis type and for biological conditions 
+%                                without replicates
+%                          idem: replicates of the same biological condition
+%                                [HL,BL] is compared to [BL,HL] (no distinction between increased
+%                                and decreased distribution which should be equal)
+%  10 SizerFittingDegrees: used by sizer (the procedure of curve smoothing).Indicates the number of 
+%                          increasing fitting degrees used
+%  11         DisplayFlag: indicates if figures must be drawn or not
+% 
+% OUTPUT PARAMETERS
+%  1 RankGrid: sampling range of ranks [0.25:0.25:100]
+%  2     Grid: smoothed variation curves corresponding to RankGrid
+%  3 ZVarGrid: Normalized variations used for 2-D interpolation
+%  4     ZVar: normalized variations (ZVar=interp2(RankGrid,VarGrid,ZVarGrid,Rank,Var))
+% 
 % VARIABLE NAMES
-%  Val: values (ranks)
-%  Var: variations (rank differences)
-% Perc: percentile
-%  Pos: positive variations
-%  Neg: negative variations
-%   S~: sorted values
-%   P~: values that keep the correspondance with sorted value
-
+%   Val: values (ranks)
+%   Var: variations (rank differences)
+%  Perc: percentile
+%   Pos: positive variations
+%   Neg: negative variations
+%    S~: sorted values
+%    P~: values that keep the correspondance with sorted value
+% 
 % SORT USING
-% Y=f(X) => [SX,SortIndex]=sort(X) => PY=Y(SortIndex)
-% the original order can be find with : [temp ReverseIndex]=sort(SortIndex) => X=SX(ReverseIndex)
-
-% DIFFERENCE BETWEEN INDEX AND BINDEX:
-% a=[0,2,45,0]
-% Index=find(a==0) => Index=[1,4]
-% Bindex=a==0 => Bindex=[1,0,0,1]
+%  Y=f(X) => [SX,SortIndex]=sort(X) => PY=Y(SortIndex)
+%  the original order can be find with : [temp ReverseIndex]=sort(SortIndex) => X=SX(ReverseIndex)
+% 
+%  DIFFERENCE BETWEEN INDEX AND BINDEX:
+%  a=[0,2,45,0]
+%  Index=find(a==0) => Index=[1,4]
+%  Bindex=a==0 => Bindex=[1,0,0,1]
 
 
 %¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
@@ -262,16 +270,22 @@ if DisplayFlag==1
     if isequal(AnalyseType,'chipchip')|isequal(CalibType,'distinct')
         plot(FRank,ZVar,'r.','markersize',3);
     else
-        plot(FRank(IncIndex),ZVar(IncIndex),'r.','markersize',3);
-        plot(FRank(DecIndex),-ZVar(DecIndex),'b.','markersize',3);
+        if isequal(NormType,'quantile')
+            plot(FRank(IncIndex),ZVar(IncIndex),'r.','markersize',3);
+            plot(FRank(DecIndex),-ZVar(DecIndex),'b.','markersize',3);
+        elseif isequal(NormType,'standardization')
+            %in standardization procedure ZVar overlap
+            plot(FRank(IncIndex),ZVar(IncIndex)+2,'r.','markersize',3);
+            plot(FRank(DecIndex),-ZVar(DecIndex)-2,'b.','markersize',3);
+        end
     end
     set(gca,'box','on')
     xlabel('min(rank(Replicate 1),rank(Replicate 2))')
     if isequal(NormType,'quantile')
-        ylabel('quantile normalised Rank Diff')
+        ylabel('ZVar (quantile normalised Rank Diff)')
         title(sprintf('%s: Distribution of Quantile Normalized RD',CalibName))
     elseif isequal(NormType,'standardization')
-        ylabel('standardized Rank diff')
+        ylabel('ZVar (standardized Rank diff)')
         title(sprintf('%s: Distribution of Standardized RD',CalibName))
     end
     set(h1,'units','normalized')

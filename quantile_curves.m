@@ -1,57 +1,60 @@
 %===========================
-% FUNCTION QUANTILE_CURVES %
+% FUNCTION QUANTILE_CURVES 
 %===========================
-
+% 
 % QUANTILE_CURVES calculates quantile curves:
-%Variations (rank differences) are sorted according to the rank to which they correspond.
-%Successive, range of ranks are selected to calculate either the mean, the std or several percentiles of all
-%the positive variations (indexed by the SelIndex parameter) contained in the current range of ranks
-%The percentile that are calculated correspond to the fraction stored in PercRange.
-%The ranges are determined by a sliding window of size WinSize, shifted by steps equal to WinStep.
-%The current X position corresponds to a rank. The first occurence of this rank
-%is the current position.
-%The positive variations values used for calculating the fractiles are put in the range of positions going from the
-%position used in the previous step (the value of which is stored in MemAllPosition) to the actual current position.
-%The window size is constant but the process act on a selection of point (corresponding to positive variations),
-%so in the final result a window is represented by rank intervals of different length
-
-%INPUT PARAMETERS
-% 1               Rank: ranks
-% 2                Var: variations (rank diff)
-% 3        AnalyseType: either 'transcriptome' or 'chipchip'
-% 4           SelIndex: position of positive variations used
-% 5      RankThreshold: range of rank (in general at the beginning of the rank range) to be processed as the first
-%                       window position (can be empty)
-% 6            WinStep: window step
-% 7            WinSize: window size
-% 8          PercRange: the fraction to which percentile must be calculated
-% 9 SizerFittingDegree: the number of different fitting degree used by SIZER
-% 10       DisplayFlag: indicates if figures must be drawn or not
-
+% Variations (rank differences) are sorted according to the rank to which they correspond.
+% Successive, range of ranks are selected to calculate either the mean, the std or several
+% percentiles of all the positive variations (indexed by the SelIndex parameter) contained
+% in the current range of ranks. The percentile that are calculated correspond to the 
+% fraction stored in PercRange. The ranges are determined by a sliding window of size 
+% WinSize, shifted by steps equal to WinStep.
+% The current X position corresponds to a rank. The first occurence of this rank
+% is the current position.
+% The positive variations values used for calculating the fractiles are put in the range
+% of positions going from the position used in the previous step (the value of which is 
+% stored in MemAllPosition) to the actual current position. The window size is constant 
+% but the process act on a selection of point (corresponding to positive variations), 
+% so in the final result a window is represented by rank intervals of different length
+% 
+% INPUT PARAMETERS
+%  1               Rank: ranks
+%  2                Var: variations (rank diff)
+%  3        AnalyseType: either 'transcriptome' or 'chipchip'
+%  4           SelIndex: position of positive variations used
+%  5      RankThreshold: range of rank (in general at the beginning of the rank range) 
+%                        to be processed as the first window position (can be empty)
+%  6            WinStep: window step
+%  7            WinSize: window size
+%  8          PercRange: the fraction to which percentile must be calculated
+%  9 SizerFittingDegree: the number of different fitting degree used by SIZER
+%  10       DisplayFlag: indicates if figures must be drawn or not
+% 
 % OUTPUT PARAMETERS
-% 1 OutputRes: structure with normalized variations
-% 2      Rank: rank of positive variations (indexed by SelIndex)
-% 3       Var: positive variations
-% 4  RankGrid: sampling range of ranks [0.25:0.25:100]
-% 5      Grid: smoothed variation curves corresponding to RankGrid
-
+%  1 OutputRes: structure with normalized variations
+%  2      Rank: rank of positive variations (indexed by SelIndex)
+%  3       Var: positive variations
+%  4  RankGrid: sampling range of ranks [0.25:0.25:100]
+%  5      Grid: smoothed variation curves corresponding to RankGrid
+% 
 % OUTPUTRES STRUCTURE
-%     OutputRes.rank: rank of the X values
-%     OutputRes.perc: series of raw percentile curves in the sliding window
-%  OutputRes.fitperc: series of smoothed percentiles curves (SIZER)
-%     OutputRes.mean:  mean of the variation in the sliding window
-%  OutputRes.fitmean: smoothed mean (SIZER)
-%      OutputRes.std: std of the variation in the sliding window
-%   OutputRes.fitstd: smoothed std (SIZER)
-%  OutputRes.stepvar: standardised variation (original RDAM method) in the sliding window
-%   OutputRes.fitvar: smoothed standardised variation  (SIZER)
-% OutputRes.fraction: percentage of positive variation in the sliding window
-% OutputRes.gridperc: smoothed percentiles curves corresponding to a sampling range of ranks [0.25:0.25:100]
-
+%      OutputRes.rank: rank of the X values
+%      OutputRes.perc: series of raw percentile curves in the sliding window
+%   OutputRes.fitperc: series of smoothed percentiles curves (SIZER)
+%      OutputRes.mean:  mean of the variation in the sliding window
+%   OutputRes.fitmean: smoothed mean (SIZER)
+%       OutputRes.std: std of the variation in the sliding window
+%    OutputRes.fitstd: smoothed std (SIZER)
+%   OutputRes.stepvar: standardised variation (original RDAM method) in the sliding window
+%    OutputRes.fitvar: smoothed standardised variation  (SIZER)
+%  OutputRes.fraction: percentage of positive variation in the sliding window
+%  OutputRes.gridperc: smoothed percentiles curves corresponding to a sampling range of 
+%                      ranks [0.25:0.25:100]
+% 
 % VARIABLE NAMES
-% Pos: position (index)
-%   F: filtered (selected with SelIndex)
-%   S: sorted
+%  Pos: position (index)
+%    F: filtered (selected with SelIndex)
+%    S: sorted
 
 
 %¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%

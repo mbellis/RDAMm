@@ -1,20 +1,19 @@
 %================
-% FUNCTION DEMO %
+% FUNCTION DEMO 
 %================
-
-% DEMO run a demonstration
+% 
+% DEMO runs a demonstration
 % demo must be run from inside the main directory:
 % 'cd .../RDAMm/'
 % 'demo'
 %
 % GLOBAL VARIABLES
-% DataRanks contains data ranks (if LoadDataFlag==1,  DataRanks is empty)
-% P contains metadata (P.point : description of points, P.biol: description of biological conditions ...)
-% S contains calibration sets
-
-
-% comment/uncomment lines to test different combination of parameters as indicated
-
+%  DataRanks contains data ranks (if LoadDataFlag==1,  DataRanks is empty)
+%  P contains metadata (P.point : description of points, P.biol: description of 
+%    biological conditions ...)
+%  S contains calibration sets
+%
+% Comment/uncomment lines to test different combination of parameters as indicated
 
 
 %¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
@@ -29,6 +28,7 @@
 %  THIS CODE IS DISTRIBUTED UNDER THE CeCILL LICENSE, WHICH IS COMPATIBLE WITH       %
 %  THE GNU GENERAL PUBLIC LICENCE AND IN ACCORDANCE WITH THE EUROPEAN LEGISLATION.   %
 %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!%
+
 function demo()
 global DataRanks P S 
 
@@ -47,16 +47,22 @@ if Ok==0
     waitfor(h)
     error('process canceled')
 end
-DataDir=fullfile(RootDir,'data');
 %load global variable
-cd(DataDir)
 load global
+%load CalibSet_01 if it exists
+DataDir=fullfile(RootDir,'data');
+P.dir.data=DataDir;
+try
+cd(DataDir)
+catch
+    mkdir('data')
+end
 if exist(fullfile(DataDir,'CalibSet_01.mat'),'file')
     load CalibSet_01
 else
     S=[];
 end
-P.dir.data=DataDir;
+
     
 CompScheme={[1,2;1,2];[1,2;2,1]};
 TGRankList= [2,3];
@@ -65,12 +71,13 @@ LoadDataFlag=1;
 RankThreshold=[0,0];
 CalibType='idem';
 ClearIndex=[];
-NormType='quantile';
+%NormType='quantile';
+NormType='standardization';
 AnalyseType='transcriptome';
 SizerFittingDegrees=7;
 SingleCalibPointFlag=0;
 SingleCalibCurveFlag=0;
-CalibUpdateFlag=0;
+CalibUpdateFlag=1;
 CalibSaveFlag=1;
 DisplayFlag=1;
 ComparisonFlag=1;

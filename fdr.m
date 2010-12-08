@@ -1,22 +1,22 @@
 %===============
-% FUNCTION FDR %
+% FUNCTION FDR 
 %===============
-
+% 
 % FDR calculates fdr and sensitivity.
-
-%INPUT PARAMETERS
-% 1        ZVar: normalized variation
-% 2         Ppv: the product of p-values
-% 3       PpvPv: the p-value of Ppv (calculated in case of null hypothesis)
-% 4      PpvCdf: the observed cumulative distribution frequency of Ppv
-% 5 DisplayFlag: indicates if figures must be drawn or not
-% 6        FigH: the figure handle
-% 7      SubPos: subplot position
-
-%OUTPUT PARAMETERS
-% 1         Fdr: False Discovery Rate of Ppv
-% 2 Sensitivity: sensitivity of Ppv
-% 3   TruePosNb: estimated true variation
+% 
+% INPUT PARAMETERS
+%  1        ZVar: normalized variation
+%  2         Ppv: the product of p-values
+%  3       PpvPv: the p-value of Ppv (calculated in case of null hypothesis)
+%  4      PpvCdf: the observed cumulative distribution frequency of Ppv
+%  5 DisplayFlag: indicates if figures must be drawn or not
+%  6        FigH: the figure handle
+%  7      SubPos: subplot position
+% 
+% OUTPUT PARAMETERS
+%  1         Fdr: False Discovery Rate of Ppv
+%  2 Sensitivity: sensitivity of Ppv
+%  3   TruePosNb: estimated true variation
 
 
 %¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%

@@ -1,19 +1,18 @@
 %===========================
-% FUNCTION MAKE_MONOTONOUS %
+% FUNCTION MAKE_MONOTONOUS 
 %===========================
-
+% 
 % MAKE_MONOTONOUS makes a vector of values monotonous either by keeping
 % the last greatest or last smallest value.
 % Outliers are eliminated before by a simple procedure (deviation from mean local value).
-
+% 
 % INPUT PARAMETERS
-% 1      Val : values that must be rendered monotonous
-% 2     Type : either inc (monotonous increasing) or dec (monotonous decreasing)
-% 3 FlipFlag : if ==1 flip the data before making them monotonous
-
-
+%  1      Val : values that must be rendered monotonous
+%  2     Type : either inc (monotonous increasing) or dec (monotonous decreasing)
+%  3 FlipFlag : if ==1 flip the data before making them monotonous
+% 
 % OUTPUT PARAMETERS
-% 1 Val : values made monotonous
+%  1 Val : values made monotonous
 
 
 %¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%

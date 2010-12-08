@@ -1,0 +1,48 @@
+* RDAM is the acronym of **Rank Difference Analysis of Microarrays**.
+|
+* Microarrays are devices which allow to measure simultaneously the expression level
+ of thousands of genes in a particular biological condition. If several samples of 
+ the same biological conditions are at disposal, we speak of *replicates*.
+  
+* RDAM is intended to find genes that have a *statistically significant difference of*
+ *expression level* when we compare replicates of two different biological conditions,
+ e.g. four different *cancerous* liver biopsies versus three different *healthy* liver biopsies.|
+|
+* RDAM can be applied in other situations where the same type of measure is applied to
+ huge replicated series of different items observed in two different conditions
+ (**multiple paired tests with replicates**).
+
+**RDAM uses a non-parametric approach**
+
+* Measured values are first **ranked** onto a 0-100 range scale.
+
+  * this allows to normalise all the replicates to a common scale,
+ 
+  * in graphical representation each interval, or bin, contains the same number of items.
+ 
+* Variation is expressed as a **rank difference**, and a geometrical transformation of
+ the plot of rank difference versus rank allows to derive a *normalised  variation* called *zVar*.
+  
+  * this geometrical transformation applied to *two replicates of the same condition* gives the 
+   *null distribution of zVar* **common to all the items**,
+
+  * from the null distribution, we are able to estimate, for each item, 
+   a p-value for each observed variation in all (or a subset of all)
+   possible pairs of replicates between the two conditions,
+
+  * for each item, the different Zvar and their associated p-values are 
+   combined in order to calculate a single Zvar and p-value that sum up 
+   the variation of that item between the two conditions.
+
+* Multiple testing is taken in account, and **false discovery rate (Fdr)** and
+ **sensitivity** are estimated in order to make adapted selection of items.
+  
+  * Fdr is the percentage of false positives in the final selection,
+
+  * Sensitivity is the percentage of really varying items that are present in the final selection.
+   Knowledge of these two statistics allows the user to select the most convenient compromise    between *specificity* and *sensitivity*
+
+**Complementary informations**:
+
+http://morganite.sic.montp.cnrs.fr/mbellis
+http://code.google.com/p/arraymatic

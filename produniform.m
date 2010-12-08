@@ -1,30 +1,29 @@
 %=======================
-% FUNCTION PRODUNIFORM %
+% FUNCTION PRODUNIFORM 
 %=======================
-
-% PRODUNIFORM calculates the product of several independant uniform random variables.
-
-% INPUT PARAMETERS
-% 1 ProdNb: the number of variables in the product
-
-% OUTPUT PARAMETERS
-% 1 PpvList: the list of Ppv
-% 2  PPvCdf: the probabilities for Ppv
-
-% COPYRIGHT
-% Translated from C program with this Copyright
-%       Copyrights Orestis Georgiou   25-8-09
 %
-%       This program is related to the paper:
-%       Product of n independent Uniform Random Variables.
-
-%        When Theorem 1. of the above paper is integrated, the incomplete gamma
-%        function, Gamma[n,x] is obtained which for integer n can be expressed
-%        analytically. Thus, this program calculates the probability that a random
-%        variable X, consisting of the product of n independent and identically
-%        distributed uniform [a,b] random variables X_{i}, i=1,2..n, takes on a value
-%        less than or equal to tau.
-
+% PRODUNIFORM calculates the product of several independant uniform random variables.
+%
+% INPUT PARAMETERS
+%  1 ProdNb: the number of variables in the product
+% 
+% OUTPUT PARAMETERS
+%  1 PpvList: the list of Ppv
+%  2  PPvCdf: the probabilities for Ppv
+% 
+%  COPYRIGHT
+%  Translated from C program with this Copyright
+%        Copyrights Orestis Georgiou   25-8-09
+% 
+%        This program is related to the paper:
+%        Product of n independent Uniform Random Variables.
+% 
+%         When Theorem 1. of the above paper is integrated, the incomplete gamma
+%         function, Gamma[n,x] is obtained which for integer n can be expressed
+%         analytically. Thus, this program calculates the probability that a random
+%         variable X, consisting of the product of n independent and identically
+%         distributed uniform [a,b] random variables X_{i}, i=1,2..n, takes on a value
+%         less than or equal to tau.
 
 %¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤%
 %                          c) Michel Bellis                                                %
