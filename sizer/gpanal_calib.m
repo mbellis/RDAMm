@@ -1,4 +1,7 @@
-function [XGrid, Fitted] = gpanal(data,vrange,nhp) 
+%===========================
+% FUNCTION GPANAL_CALIB
+%===========================
+%
 % GPANAL, General Purpose data ANALysis
 % Inputs:
 %     data    - either n x 1 column vector of density estimation data
@@ -11,20 +14,13 @@ function [XGrid, Fitted] = gpanal(data,vrange,nhp)
 % Outputs:
 %
 % Assumes path can find personal functions:
-%    bwsjpib.m
-%    bwrswb.m
-%    gpkde.m
 %    gpnpr.m
-%    gpsz1.m
-
+%
 %    Copyright (c) J. S. Marron 1997, 1998
 %    Modified M Bellis 2001
 
 
-
-
-
-
+function [XGrid, Fitted] = gpanal_calib(data,vrange,nhp) 
 xdat = data(:,1) ;
 ydat = data(:,2) ;
 idatyp = 2 ;

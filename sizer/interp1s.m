@@ -1,4 +1,7 @@
-function yi = interp1s(x,y,xi) 
+%======================
+% FUNCTION INTERP1S
+%======================
+%
 % INTERP1S, linear interpolation, with constant extrapolation outside
 %     slight modification of linear version of INTERP1, which
 %     allows values xi values outside the range of x, and 
@@ -11,10 +14,10 @@ function yi = interp1s(x,y,xi)
 %     yi -  linearly interpolated approximate values of f(xi)
 %
 %     For more details, try "help interp1"
-
+%
 %    Copyright (c) J. S. Marron 1997
 
-
+function yi = interp1s(x,y,xi) 
 %  Initialize Output
 %
 nx = length(x) ;

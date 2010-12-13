@@ -1,4 +1,7 @@
-function [npr,xgrid,mker] = gpnpr(data,vh,vxgrid,imptyp,polydeg,eptflag) 
+%==================
+% FUNCTION GPNR
+%==================
+%
 % GPNPR, General Purpose NonParametric Regression (1-d, Local poly))
 %     Does 1-d kernel local polynomial (usually linear) regression,
 %     using binned (default), direct (either matrix, or loops for 
@@ -69,12 +72,12 @@ function [npr,xgrid,mker] = gpnpr(data,vh,vxgrid,imptyp,polydeg,eptflag)
 %    vec2mat.m
 %    gplbinr.m
 %    bwrswb.m
-
+%
 %    Copyright (c) J. S. Marron 1997
 
+function [npr,xgrid,mker] = gpnpr(data,vh,vxgrid,imptyp,polydeg,eptflag) 
 
 %  Set parameters and defaults according to number of input arguments
-%
 if nargin == 1 ;    %  only 1 argument input, use default bandwidth
   ivh = 0 ;      %  use default Ruppert Sheather Wand DPI
 else ;              %  bandwidth was specified, use that

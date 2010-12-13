@@ -1,4 +1,7 @@
-function [bindat,bincent] = gplbinr(data,vgridp,eptflag,ibtype) 
+%======================
+% FUNCTION GPLBINR
+%======================
+%
 % GPLBINR, General Purpose Linear BINneR (density and regression est.)
 %     Does linear binning of either density or regression 1-d data,
 %     to an equally spaced grid.
@@ -33,9 +36,10 @@ function [bindat,bincent] = gplbinr(data,vgridp,eptflag,ibtype)
 % Used by:   gpkde.m
 %            gpnpr.m
 %
-
+%
 %    Copyright (c) J. S. Marron 1996-1997
 
+function [bindat,bincent] = gplbinr(data,vgridp,eptflag,ibtype) 
 
 %  Detect if this is density estimation, or regression, and handle data
 if size(data,2) == 1 ;    %  Then is density estimation
