@@ -533,6 +533,8 @@ for RoundL=1:RoundNb
                 h=errordlg('HL (point nb %u) and BL (point nb %u) have identical values !',HLRanks(1),BLRanks(1));
                 waitfor(h)
             else
+                CurrZVal(find(CurrZVal>100))=100;
+                CurrZVal(find(CurrZVal<-100))=-100;
                 if isequal(NormType,'quantile')
                     [CurrZVar(:,CompL),CurrPv(:,CompL)]=getpv(HL,BL,CurrZVal,CurrZVarCdf,CurrMinZVar,CurrMaxZVar,NormType,[],[]);
                 elseif isequal(NormType,'standardization')
